@@ -1,0 +1,59 @@
+<!DOCTYPE HTML>
+<html>
+<head>  
+<script>
+window.onload = function () {
+
+var chart = new CanvasJS.Chart("chartContainer", {
+    animationEnabled: true,
+    theme: "light2",
+    title:{
+        text: "Estimation Error Plot"
+    },
+    axisY:{
+        title: "Distance (in metres)",
+        includeZero: false,
+        stripLines: [{
+            value: 145.1683568,
+            label: "Mean Error"
+        }]
+    },
+    axisX:{
+        title: "UAV Posits",
+        includeZero: false
+    },
+    data: [{        
+        type: "spline",       
+        dataPoints: [
+            { y: 143.2212885841438 },
+            { y: 180.24034335885597},
+            { y: 126.4453917838317},
+            { y: 124.06382148025357 },
+            { y: 129.45573231575747},
+            { y: 113.1670211326826 },
+            { y: 124.51483352744344 },
+            { y: 112.08286268446932 },
+            { y: 124.84247540190641 },
+            { y: 130.56636375468517 },
+            { y: 122.33275511072728 },
+            { y: 130.91103184808358 },
+            { y: 129.33716150739258  },
+            { y: 234.02463490564136, indexLabel: "highest",markerColor: "red", markerType: "triangle" },
+            { y: 167.34000054369415  },
+            { y: 140.2175431597035  },
+            { y: 220.18559312168205  },
+            { y: 194.09181166643188  },
+            { y: 111.15811251663271, indexLabel: "lowest",markerColor: "DarkSlateGrey", markerType: "cross"  },
+        ]
+    }]
+});
+chart.render();
+
+}
+</script>
+</head>
+<body>
+<div id="chartContainer" style="height: 370px; width: 100%;"></div>
+<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+</body>
+</html>

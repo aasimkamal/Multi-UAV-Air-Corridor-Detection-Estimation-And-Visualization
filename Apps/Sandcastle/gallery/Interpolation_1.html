@@ -1,0 +1,2969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta name="description" content="Use Corridor">
+    <meta name="cesium-sandcastle-labels" content="Tutorials">
+    <title>Corridor Estimation and Visualization</title>
+    <script type="text/javascript" src="../Sandcastle-header.js"></script>
+    <script type="text/javascript" src="../../../ThirdParty/requirejs-2.1.20/require.js"></script>
+    <script type="text/javascript">
+    require.config({
+        baseUrl : '../../../Source',
+        waitSeconds : 60
+    });
+    </script>
+</head>
+<body class="sandcastle-loading" data-sandcastle-bucket="bucket-requirejs.html">
+<style>
+        @import url(../templates/bucket.css);
+    </style>
+    <div id="cesiumContainer" class="fullSize"></div>
+    <div id="loadingOverlay">
+        <h1>Loading...</h1>
+    </div>
+    <div id="toolbar">
+        <table class="infoPanel">
+            <tbody>
+                <tr>
+                    <td>Corridor Size</td>
+                </tr>
+                <tr>
+                    <td>Width: <input id="width" type="number" value="400"></td>
+                </tr>
+                <tr>
+                    <td>Height: <input id="height" type="number" value="400"></td>
+                </tr>
+                <tr>
+                    <td> <input id="submit" type="button" value="Submit"></td>
+                    <td> <input id="reset" type="reset" value="Reset"></td>
+                </tr>
+            </tbody>
+        </table>
+         <div id="interpolationMenu"></div>
+         <div id="interpolationMenuTwo"></div>
+         <div id="interpolationMenuThree"></div>
+         <div id="extrapolationMenu"></div>
+    </div>
+    <canvas id="myCanvas" width="300" height="50" style="position:absolute; top:600px; right:100px; border:1px solid #d3d3d3;">
+    Your browser does not support the HTML5 canvas tag.</canvas>
+    <legend id="high" style="position:absolute; top:585px; right:400px">High Uncertainty</legend>
+    <legend id="low" style="position:absolute; top:585px; right:15px">Low Uncertainty</legend>
+    <!-- <script>
+    /*function corridorSize() {
+    alert("hi");
+    var width = document.getElementById("width");
+    var heught = document.getElementById("height");
+    alert(width+" "+height);*/
+    </script> -->
+    <script id="cesium_sandcastle_script">
+function startup(Cesium) {
+    'use strict';
+//Sandcastle_Begin
+/*var sub = document.getElementById("submit").value;
+console.log(sub);
+if(sub === "Submit") {
+    function corridorSize() {
+    alert("hi");
+    var width = document.getElementById("width");
+    var heught = document.getElementById("height");
+    alert(width+" "+height);
+}
+}*/
+
+var c = document.getElementById("myCanvas");
+var ctx = c.getContext("2d");
+// Create gradient
+var grd = ctx.createLinearGradient(0,0,300,0);
+grd.addColorStop(0,'rgba(255,255,255,0)');
+grd.addColorStop(1,'rgba(255,255,255,1)');
+// Fill with gradient
+ctx.fillStyle = grd;
+ctx.fillRect(0,0,300,50);
+
+
+var blueCorridor;
+var btnSubmit = document.getElementById("submit");
+btnSubmit.addEventListener('click', corridorSize);
+function corridorSize() {
+    //alert("hi");
+    var width = document.getElementById("width").value;
+    var height = document.getElementById("height").value;
+    //window.location.reload(false);
+    var widthHalf = width/2;
+    var heightHalf = width/2;
+    viewer.entities.remove(blueCorridor);
+    blueCorridor = viewer.entities.add({
+    name : 'Blue user-defined corridor',
+    polylineVolume : {
+        positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr[0], locLatArr[0], locHeightArr[0], 
+                                                               locLonArr[1], locLatArr[1], locHeightArr[1], 
+                                                               locLonArr[2], locLatArr[2], locHeightArr[2],
+                                                               locLonArr[3], locLatArr[3], locHeightArr[3],
+                                                               locLonArr[4], locLatArr[4], locHeightArr[4],
+                                                               locLonArr[5], locLatArr[5], locHeightArr[5],
+                                                               locLonArr[6], locLatArr[6], locHeightArr[6],
+                                                               locLonArr[7], locLatArr[7], locHeightArr[7],
+                                                               locLonArr[8], locLatArr[8], locHeightArr[8],
+                                                               locLonArr[9], locLatArr[9], locHeightArr[9],
+                                                               locLonArr[10], locLatArr[10], locHeightArr[10],
+                                                               locLonArr[11], locLatArr[11], locHeightArr[11],
+                                                               locLonArr[12], locLatArr[12], locHeightArr[12],
+                                                               locLonArr[13], locLatArr[13], locHeightArr[13],
+                                                               locLonArr[14], locLatArr[14], locHeightArr[14],
+                                                               locLonArr[15], locLatArr[15], locHeightArr[15],
+                                                               locLonArr[16], locLatArr[16], locHeightArr[16],
+                                                               locLonArr[17], locLatArr[17], locHeightArr[17],
+                                                               locLonArr[18], locLatArr[18], locHeightArr[18]]),
+        shape :[new Cesium.Cartesian2(-widthHalf, -heightHalf),
+                new Cesium.Cartesian2(widthHalf, -heightHalf),
+                new Cesium.Cartesian2(widthHalf, heightHalf),
+                new Cesium.Cartesian2(-widthHalf, heightHalf)],
+        cornerType : Cesium.CornerType.BEVELED,
+        material : Cesium.Color.BLUE.withAlpha(0.5),
+        outline : true,
+        outlineColor : Cesium.Color.BLACK
+    }
+});
+    }
+
+    var btnReset = document.getElementById("reset");
+    btnReset.addEventListener('click', resetForm);
+    function resetForm() {
+        //document.getElementById("toolbar").reset();
+        window.location.reload(false);
+    }
+
+
+Cesium.BingMapsApi.defaultKey = 'A9xWakARP6oWWBI3zMGk~AJk02AMxpxkuwx5AIzjDXA~AgMJyLPHkkjbFSpCEm8XLowoPb1IS_ZhHUmpIMjOduDzgtxA2DjxR4Gy58d9TUn5';
+
+var viewer = new Cesium.Viewer('cesiumContainer', {
+    shouldAnimate : true
+});
+
+var canvas = viewer.canvas;
+canvas.setAttribute('tabindex', '0'); // needed to put focus on the canvas
+canvas.addEventListener('click', function() {
+    canvas.focus();
+});
+canvas.focus();
+
+
+//Use STK World Terrain
+viewer.terrainProvider = new Cesium.CesiumTerrainProvider({
+    url : 'https://assets.agi.com/stk-terrain/v1/tilesets/world/tiles',
+    requestVertexNormals : true
+});
+
+
+
+//Set the random number seed for consistent results.
+Cesium.Math.setRandomNumberSeed(3);
+
+
+var start = Cesium.JulianDate.fromDate(new Date());
+var stop = Cesium.JulianDate.addSeconds(start, 360, new Cesium.JulianDate());
+//console.log(start);
+//console.log(stop);
+
+
+var a = [];
+var b = [];
+var c = [];
+var extp = [];
+var locLonArr = [];
+var locLatArr = [];
+var locHeightArr = [];
+var locLonArr1 = [];
+var locLatArr1 = [];
+var locHeightArr1 = [];
+var locLonArr2 = [];
+var locLatArr2 = [];
+var locHeightArr2 = [];
+var locLonArr3 = [];
+var locLatArr3 = [];
+var locHeightArr3 = [];
+var heightCorridor = 400;
+var widthCorridor = 400;
+function computeFlightPath(lon, lat, radius, index, flag) {
+    var count = 0;
+    var pos = new Cesium.SampledPositionProperty();
+    for (var i = 0; i <= 270; i += 10) {
+        var radians = Cesium.Math.toRadians(i);
+        //console.log(radians);
+        var time = Cesium.JulianDate.addSeconds(start, i, new Cesium.JulianDate());
+        var position = Cesium.Cartesian3.fromDegrees(lon + (radius * 1.5 * Math.cos(radians)), lat + (radius * Math.sin(radians)), Cesium.Math.nextRandomNumber() * 500 + 1750);
+        pos.addSample(time, position);
+        console.log("Position" +position);
+        console.log("Pos" +pos.getValue(time));
+        //console.log(pos.getValue(time));
+        if(index === 1){
+            a[count] = pos.getValue(time);
+            console.log("a" +a[count]);
+            var loc1 = pos.getValue(time);
+            var locCarto1 = Cesium.Cartographic.fromCartesian(loc1); 
+            var loclon1 = Cesium.Math.toDegrees(locCarto1.longitude);
+            var loclat1 = Cesium.Math.toDegrees(locCarto1.latitude);
+            var locheight1 = locCarto1.height; //height in metres
+            locLonArr1[count] = loclon1;
+            locLatArr1[count] = loclat1;
+            locHeightArr1[count] = locheight1 - (heightCorridor/2); //Waypoints at mid of the corridor as height is 400m
+        }
+        if(index === 2) {
+            b[count] = pos.getValue(time);
+
+            var loc2 = pos.getValue(time);
+            var locCarto2 = Cesium.Cartographic.fromCartesian(loc2); 
+            var loclon2 = Cesium.Math.toDegrees(locCarto2.longitude);
+            var loclat2 = Cesium.Math.toDegrees(locCarto2.latitude);
+            var locheight2 = locCarto2.height; //height in metres
+            locLonArr2[count] = loclon2;
+            locLatArr2[count] = loclat2;
+            locHeightArr2[count] = locheight2 - (heightCorridor/2); //Waypoints at mid of the corridor as height is 400m
+        }
+        
+        
+        
+
+        //Also create a point for each sample we generate.
+        if(index === 1 && flag === 0) {
+            viewer.entities.add({
+                position : position,
+                point : {
+                    pixelSize : 8,
+                    color : Cesium.Color.TRANSPARENT,
+                    outlineColor : Cesium.Color.YELLOW,
+                    outlineWidth : 3
+                }
+            });
+        }
+        if(index === 2 && flag === 0) {
+            viewer.entities.add({
+                position : position,
+                point : {
+                    pixelSize : 8,
+                    color : Cesium.Color.TRANSPARENT,
+                    outlineColor : Cesium.Color.RED,
+                    outlineWidth : 3
+                }
+            });
+        }
+        count++;
+    }
+    return pos;
+}
+
+function computeFlightPath2(lon, lat, radius, index, flag) {
+    var count = 0;
+    var pos = new Cesium.SampledPositionProperty();
+    for (var i = 0; i <= 270; i += 30) {
+        var radians = Cesium.Math.toRadians(i);
+        //console.log(radians);
+        var time = Cesium.JulianDate.addSeconds(start, i, new Cesium.JulianDate());
+        var position = Cesium.Cartesian3.fromDegrees(lon + (radius * 1.5 * Math.cos(radians)), lat + (radius * Math.sin(radians)), Cesium.Math.nextRandomNumber() * 500 + 1750);
+        pos.addSample(time, position);
+        console.log("Position" +position);
+        console.log("Pos" +pos.getValue(time));
+        //console.log(pos.getValue(time));
+        if(index === 1){
+            a[count] = pos.getValue(time);
+            console.log("a" +a[count]);
+            var loc1 = pos.getValue(time);
+            var locCarto1 = Cesium.Cartographic.fromCartesian(loc1); 
+            var loclon1 = Cesium.Math.toDegrees(locCarto1.longitude);
+            var loclat1 = Cesium.Math.toDegrees(locCarto1.latitude);
+            var locheight1 = locCarto1.height; //height in metres
+            locLonArr1[count] = loclon1;
+            locLatArr1[count] = loclat1;
+            locHeightArr1[count] = locheight1 - (heightCorridor/2); //Waypoints at mid of the corridor as height is 400m
+        }
+        if(index === 2) {
+            b[count] = pos.getValue(time);
+
+            var loc2 = pos.getValue(time);
+            var locCarto2 = Cesium.Cartographic.fromCartesian(loc2); 
+            var loclon2 = Cesium.Math.toDegrees(locCarto2.longitude);
+            var loclat2 = Cesium.Math.toDegrees(locCarto2.latitude);
+            var locheight2 = locCarto2.height; //height in metres
+            locLonArr2[count] = loclon2;
+            locLatArr2[count] = loclat2;
+            locHeightArr2[count] = locheight2 - (heightCorridor/2); //Waypoints at mid of the corridor as height is 400m
+        }
+        
+        
+        
+
+        //Also create a point for each sample we generate.
+        if(index === 1 && flag === 0) {
+            viewer.entities.add({
+                position : position,
+                point : {
+                    pixelSize : 8,
+                    color : Cesium.Color.TRANSPARENT,
+                    outlineColor : Cesium.Color.YELLOW,
+                    outlineWidth : 3
+                }
+            });
+        }
+        if(index === 2 && flag === 0) {
+            viewer.entities.add({
+                position : position,
+                point : {
+                    pixelSize : 8,
+                    color : Cesium.Color.TRANSPARENT,
+                    outlineColor : Cesium.Color.RED,
+                    outlineWidth : 3
+                }
+            });
+        }
+        count++;
+    }
+    return pos;
+}
+
+
+function computeFlightPath3(lon, lat, radius, index, flag) {
+    var count = 0;
+    var pos = new Cesium.SampledPositionProperty();
+    for (var i = 0; i <= 270; i += 10) {
+        var radians = Cesium.Math.toRadians(i);
+        //console.log(radians);
+        var time = Cesium.JulianDate.addSeconds(start, i, new Cesium.JulianDate());
+        var position = Cesium.Cartesian3.fromDegrees(lon + (radius * 1.5 * Math.cos(radians)), lat + (radius * Math.sin(radians)), Cesium.Math.nextRandomNumber() * 500 + 1750);
+        pos.addSample(time, position);
+        console.log("Position" +position);
+        console.log("Pos" +pos.getValue(time));
+        //console.log(pos.getValue(time));
+        if(index === 1){
+            extp[count] = pos.getValue(time);
+            //console.log("a" +a[count]);
+            var loc1 = pos.getValue(time);
+            var locCarto1 = Cesium.Cartographic.fromCartesian(loc1); 
+            var loclon1 = Cesium.Math.toDegrees(locCarto1.longitude);
+            var loclat1 = Cesium.Math.toDegrees(locCarto1.latitude);
+            var locheight1 = locCarto1.height; //height in metres
+            locLonArr3[count] = loclon1;
+            locLatArr3[count] = loclat1;
+            locHeightArr3[count] = locheight1 - (heightCorridor/2); //Waypoints at mid of the corridor as height is 400m
+        }
+        if(index === 2) {
+            extp[count] = pos.getValue(time);
+
+            var loc2 = pos.getValue(time);
+            var locCarto2 = Cesium.Cartographic.fromCartesian(loc2); 
+            var loclon2 = Cesium.Math.toDegrees(locCarto2.longitude);
+            var loclat2 = Cesium.Math.toDegrees(locCarto2.latitude);
+            var locheight2 = locCarto2.height; //height in metres
+            locLonArr3[count] = loclon2;
+            locLatArr3[count] = loclat2;
+            locHeightArr3[count] = locheight2 - (heightCorridor/2); //Waypoints at mid of the corridor as height is 400m
+        }
+        
+        
+        
+
+        //Also create a point for each sample we generate.
+        if(index === 1 && flag === 0) {
+            viewer.entities.add({
+                position : position,
+                point : {
+                    pixelSize : 8,
+                    color : Cesium.Color.TRANSPARENT,
+                    outlineColor : Cesium.Color.WHITE,
+                    outlineWidth : 3
+                }
+            });
+        }
+        if(index === 2 && flag === 0) {
+            viewer.entities.add({
+                position : position,
+                point : {
+                    pixelSize : 8,
+                    color : Cesium.Color.TRANSPARENT,
+                    outlineColor : Cesium.Color.WHITE,
+                    outlineWidth : 3
+                }
+            });
+        }
+        count++;
+    }
+    return pos;
+}
+
+
+function computeFlightPathWithBox(lon, lat, radius, index, flag) {
+    var count = 0;
+    var pos = new Cesium.SampledPositionProperty();
+    for (var i = 0; i <= 270; i += 5) {
+        var radians = Cesium.Math.toRadians(i);
+        //console.log(radians);
+        var time = Cesium.JulianDate.addSeconds(start, i, new Cesium.JulianDate());
+        var position = Cesium.Cartesian3.fromDegrees(lon + (radius * 1.5 * Math.cos(radians)), lat + (radius * Math.sin(radians)), Cesium.Math.nextRandomNumber() * 500 + 1750);
+        pos.addSample(time, position);
+        console.log("Position" +position);
+        console.log("Pos" +pos.getValue(time));
+        //console.log(pos.getValue(time));
+        if(index === 1){
+            a[count] = pos.getValue(time);
+            console.log("a" +a[count]);
+            var loc1 = pos.getValue(time);
+            var locCarto1 = Cesium.Cartographic.fromCartesian(loc1); 
+            var loclon1 = Cesium.Math.toDegrees(locCarto1.longitude);
+            var loclat1 = Cesium.Math.toDegrees(locCarto1.latitude);
+            var locheight1 = locCarto1.height; //height in metres
+            locLonArr1[count] = loclon1;
+            locLatArr1[count] = loclat1;
+            locHeightArr1[count] = locheight1 - (heightCorridor/2); //Waypoints at mid of the corridor as height is 400m
+        }
+        if(index === 2) {
+            b[count] = pos.getValue(time);
+
+            var loc2 = pos.getValue(time);
+            var locCarto2 = Cesium.Cartographic.fromCartesian(loc2); 
+            var loclon2 = Cesium.Math.toDegrees(locCarto2.longitude);
+            var loclat2 = Cesium.Math.toDegrees(locCarto2.latitude);
+            var locheight2 = locCarto2.height; //height in metres
+            locLonArr2[count] = loclon2;
+            locLatArr2[count] = loclat2;
+            locHeightArr2[count] = locheight2 - (heightCorridor/2); //Waypoints at mid of the corridor as height is 400m
+        }
+        
+        
+        
+
+        //Also create a point for each sample we generate.
+        if(index === 1) {
+            viewer.entities.add({
+                position : position,
+                point : {
+                    pixelSize : 8,
+                    color : Cesium.Color.TRANSPARENT,
+                    outlineColor : Cesium.Color.YELLOW,
+                    outlineWidth : 3
+                }
+            });
+            viewer.entities.add({
+                position: position,
+                //orientation: Cesium.Quaternion.fromHeadingPitchRoll(new Cesium.HeadingPitchRoll(Math.PI, 0, 0)),
+                box : {
+                    dimensions : new Cesium.Cartesian3(400.0, 0.0, 400.0),
+                    fill : false,
+                    outline : true,
+                    outlineColor : Cesium.Color.YELLOW
+                }
+
+            });
+        }
+        if(index === 2) {
+            viewer.entities.add({
+                position : position,
+                point : {
+                    pixelSize : 8,
+                    color : Cesium.Color.TRANSPARENT,
+                    outlineColor : Cesium.Color.RED,
+                    outlineWidth : 3
+                }
+            });
+            viewer.entities.add({
+                position: position,
+                //orientation: Cesium.Quaternion.fromHeadingPitchRoll(new Cesium.HeadingPitchRoll(Math.PI, 0, 0)),
+                box : {
+                    dimensions : new Cesium.Cartesian3(400.0, 0.0, 400.0),
+                    fill : false,
+                    outline : true,
+                    outlineColor : Cesium.Color.RED
+                }
+
+            });
+        }
+        count++;
+    }
+    return pos;
+}
+
+function computeFlightPath2WithBox(lon, lat, radius, index, flag) {
+    var count = 0;
+    var pos = new Cesium.SampledPositionProperty();
+    for (var i = 0; i <= 210; i += 15) {
+        var radians = Cesium.Math.toRadians(i);
+        //console.log(radians);
+        var time = Cesium.JulianDate.addSeconds(start, i, new Cesium.JulianDate());
+        var position = Cesium.Cartesian3.fromDegrees(lon + (radius * 1.5 * Math.cos(radians)), lat + (radius * Math.sin(radians)), Cesium.Math.nextRandomNumber() * 500 + 1750);
+        pos.addSample(time, position);
+        console.log("Position" +position);
+        console.log("Pos" +pos.getValue(time));
+        //console.log(pos.getValue(time));
+        if(index === 1){
+            a[count] = pos.getValue(time);
+            console.log("a" +a[count]);
+            var loc1 = pos.getValue(time);
+            var locCarto1 = Cesium.Cartographic.fromCartesian(loc1); 
+            var loclon1 = Cesium.Math.toDegrees(locCarto1.longitude);
+            var loclat1 = Cesium.Math.toDegrees(locCarto1.latitude);
+            var locheight1 = locCarto1.height; //height in metres
+            locLonArr1[count] = loclon1;
+            locLatArr1[count] = loclat1;
+            locHeightArr1[count] = locheight1 - (heightCorridor/2); //Waypoints at mid of the corridor as height is 400m
+        }
+        if(index === 2) {
+            b[count] = pos.getValue(time);
+
+            var loc2 = pos.getValue(time);
+            var locCarto2 = Cesium.Cartographic.fromCartesian(loc2); 
+            var loclon2 = Cesium.Math.toDegrees(locCarto2.longitude);
+            var loclat2 = Cesium.Math.toDegrees(locCarto2.latitude);
+            var locheight2 = locCarto2.height; //height in metres
+            locLonArr2[count] = loclon2;
+            locLatArr2[count] = loclat2;
+            locHeightArr2[count] = locheight2 - (heightCorridor/2); //Waypoints at mid of the corridor as height is 400m
+        }
+        
+        
+        
+
+        //Also create a point for each sample we generate.
+        if(index === 1) {
+            viewer.entities.add({
+                position : position,
+                point : {
+                    pixelSize : 8,
+                    color : Cesium.Color.TRANSPARENT,
+                    outlineColor : Cesium.Color.YELLOW,
+                    outlineWidth : 3
+                }
+            });
+            viewer.entities.add({
+                position: position,
+                //orientation: Cesium.Quaternion.fromHeadingPitchRoll(new Cesium.HeadingPitchRoll(Math.PI, 0, 0)),
+                box : {
+                    dimensions : new Cesium.Cartesian3(400.0, 0.0, 400.0),
+                    fill : false,
+                    outline : true,
+                    outlineColor : Cesium.Color.YELLOW
+                }
+
+            });
+        }
+        if(index === 2) {
+            viewer.entities.add({
+                position : position,
+                point : {
+                    pixelSize : 8,
+                    color : Cesium.Color.TRANSPARENT,
+                    outlineColor : Cesium.Color.RED,
+                    outlineWidth : 3
+                }
+            });
+            viewer.entities.add({
+                position: position,
+                //orientation: Cesium.Quaternion.fromHeadingPitchRoll(new Cesium.HeadingPitchRoll(Math.PI, 0, 0)),
+                box : {
+                    dimensions : new Cesium.Cartesian3(400.0, 0.0, 400.0),
+                    fill : false,
+                    outline : true,
+                    outlineColor : Cesium.Color.RED
+                }
+
+            });
+        }
+        count++;
+    }
+    return pos;
+}
+
+
+
+function computeFinalFlightPath(a, b, flag) {
+    var count1 = 0
+    
+//console.log(a);
+    var pos1 = new Cesium.SampledPositionProperty();
+    if(extp.length === 0) {
+            for (var i = 0; i < b.length; i++) {
+            var radians = Cesium.Math.toRadians(i*15);
+            //console.log(radians);
+            var time = Cesium.JulianDate.addSeconds(start, i, new Cesium.JulianDate());
+            var position1 = Cesium.Cartesian3.fromElements(((a[i*3].x+b[i].x)/2), ((a[i*3].y+b[i].y)/2), ((a[i*3].z+b[i].z)/2));
+            pos1.addSample(time, position1);
+            console.log("Position1" +position1);
+            console.log("Pos1" +pos1.getValue(time));
+            var loc = pos1.getValue(time);
+            c[count1] = position1;
+            console.log("count1" +count1);
+             console.log("c" +c[count1]);
+            var locCarto = Cesium.Cartographic.fromCartesian(loc); 
+            
+                var loclon = Cesium.Math.toDegrees(locCarto.longitude);
+                var loclat = Cesium.Math.toDegrees(locCarto.latitude);
+                var locheight = locCarto.height; //height in metres
+                locLonArr[count1] = loclon;
+                locLatArr[count1] = loclat;
+                locHeightArr[count1] = locheight - (heightCorridor/2); //Waypoints at mid of the corridor as height is 400m
+            //Also create a point for each sample we generate.
+                if (flag === 0) {
+                    viewer.entities.add({
+                    position : position1,
+                    point : {
+                        pixelSize : 8,
+                        color : Cesium.Color.TRANSPARENT,
+                        outlineColor : Cesium.Color.CYAN,
+                        outlineWidth : 3
+                    }
+                });
+                }
+                
+                /*viewer.entities.add({
+                    position: position,
+                    //orientation: Cesium.Quaternion.fromHeadingPitchRoll(new Cesium.HeadingPitchRoll(Math.PI, 0, 0)),
+                    box : {
+                        dimensions : new Cesium.Cartesian3(400.0, 300.0, 500.0),
+                        fill : false,
+                        outline : true,
+                        outlineColor : Cesium.Color.BLUE
+        }
+
+    });*/
+                /*var blueCorridor = viewer.entities.add({
+                    name : 'Blue extruded corridor with beveled corners and outline',
+                    corridor : {
+                        positions : Cesium.Cartesian3.fromDegreesArray(locArr),
+                        height : 4.0,
+                        extrudedHeight : 100.0,
+                        width : 100.0,
+                        cornerType: Cesium.CornerType.BEVELED,
+                        material : Cesium.Color.BLUE.withAlpha(0.5),
+                        outline : true, // height or extrudedHeight must be set for outlines to display
+                        outlineColor : Cesium.Color.WHITE
+                    }
+                });*/
+                    
+            count1++;
+        }
+    }
+    
+    if(extp.length > 0) {
+        for (var i = 0; i < a.length; i++) {
+        var radians = Cesium.Math.toRadians(i);
+        //console.log(radians);
+        var time = Cesium.JulianDate.addSeconds(start, i, new Cesium.JulianDate());
+        var position1 = Cesium.Cartesian3.fromElements(((a[i].x+extp[i].x)/2), ((a[i].y+extp[i].y)/2), ((a[i].z+extp[i].z)/2));
+        pos1.addSample(time, position1);
+        console.log("Position1" +position1);
+        console.log("Pos1" +pos1.getValue(time));
+        var loc = pos1.getValue(time);
+        c[count1] = position1;
+        console.log("count1" +count1);
+         console.log("c" +c[count1]);
+        var locCarto = Cesium.Cartographic.fromCartesian(loc); 
+        
+            var loclon = Cesium.Math.toDegrees(locCarto.longitude);
+            var loclat = Cesium.Math.toDegrees(locCarto.latitude);
+            var locheight = locCarto.height; //height in metres
+            locLonArr[count1] = loclon;
+            locLatArr[count1] = loclat;
+            locHeightArr[count1] = locheight - (heightCorridor/2); //Waypoints at mid of the corridor as height is 400m
+        //Also create a point for each sample we generate.
+            if (flag === 0) {
+                viewer.entities.add({
+                position : position1,
+                point : {
+                    pixelSize : 8,
+                    color : Cesium.Color.TRANSPARENT,
+                    outlineColor : Cesium.Color.CYAN,
+                    outlineWidth : 3
+                }
+            });
+            }
+            
+            /*viewer.entities.add({
+                position: position,
+                //orientation: Cesium.Quaternion.fromHeadingPitchRoll(new Cesium.HeadingPitchRoll(Math.PI, 0, 0)),
+                box : {
+                    dimensions : new Cesium.Cartesian3(400.0, 300.0, 500.0),
+                    fill : false,
+                    outline : true,
+                    outlineColor : Cesium.Color.BLUE
+    }
+
+});*/
+            /*var blueCorridor = viewer.entities.add({
+                name : 'Blue extruded corridor with beveled corners and outline',
+                corridor : {
+                    positions : Cesium.Cartesian3.fromDegreesArray(locArr),
+                    height : 4.0,
+                    extrudedHeight : 100.0,
+                    width : 100.0,
+                    cornerType: Cesium.CornerType.BEVELED,
+                    material : Cesium.Color.BLUE.withAlpha(0.5),
+                    outline : true, // height or extrudedHeight must be set for outlines to display
+                    outlineColor : Cesium.Color.WHITE
+                }
+            });*/
+                
+        count1++;
+    }
+    }
+    
+    return pos1;
+}
+
+function computeFinalFlightPathWithBox(a, b, flag) {
+    var count1 = 0
+    
+//console.log(a);
+    var pos1 = new Cesium.SampledPositionProperty();
+    for (var i = 0; i < b.length; i++) {
+        var radians = Cesium.Math.toRadians(i*15);
+        //console.log(radians);
+        var time = Cesium.JulianDate.addSeconds(start, i, new Cesium.JulianDate());
+        var position1 = Cesium.Cartesian3.fromElements(((a[i].x+b[i].x)/2), ((a[i].y+b[i].y)/2), ((a[i].z+b[i].z)/2));
+        pos1.addSample(time, position1);
+        console.log("Position1" +position1);
+        console.log("Pos1" +pos1.getValue(time));
+        var loc = pos1.getValue(time);
+        c[count1] = position1;
+        console.log("count1" +count1);
+         console.log("c" +c[count1]);
+        var locCarto = Cesium.Cartographic.fromCartesian(loc); 
+        
+            var loclon = Cesium.Math.toDegrees(locCarto.longitude);
+            var loclat = Cesium.Math.toDegrees(locCarto.latitude);
+            var locheight = locCarto.height; //height in metres
+            locLonArr[count1] = loclon;
+            locLatArr[count1] = loclat;
+            locHeightArr[count1] = locheight - (heightCorridor/2); //Waypoints at mid of the corridor as height is 400m
+        //Also create a point for each sample we generate.
+            viewer.entities.add({
+                position : position1,
+                point : {
+                    pixelSize : 8,
+                    color : Cesium.Color.TRANSPARENT,
+                    outlineColor : Cesium.Color.CYAN,
+                    outlineWidth : 3
+                }
+            });
+            viewer.entities.add({
+                position: position1,
+                //orientation: Cesium.Quaternion.fromHeadingPitchRoll(new Cesium.HeadingPitchRoll(Math.PI, 0, 0)),
+                box : {
+                    dimensions : new Cesium.Cartesian3(400.0, 0.0, 500.0),
+                    fill : false,
+                    outline : true,
+                    outlineColor : Cesium.Color.BLUE
+                }
+
+            });
+            /*var blueCorridor = viewer.entities.add({
+                name : 'Blue extruded corridor with beveled corners and outline',
+                corridor : {
+                    positions : Cesium.Cartesian3.fromDegreesArray(locArr),
+                    height : 4.0,
+                    extrudedHeight : 100.0,
+                    width : 100.0,
+                    cornerType: Cesium.CornerType.BEVELED,
+                    material : Cesium.Color.BLUE.withAlpha(0.5),
+                    outline : true, // height or extrudedHeight must be set for outlines to display
+                    outlineColor : Cesium.Color.WHITE
+                }
+            });*/
+                
+        count1++;
+    }
+    return pos1;
+}
+
+
+//Compute the position
+var position = computeFlightPath(-83.60986232757568, 41.653258658953995, 0.03, 1,0);
+var position1 = computeFlightPath2(-83.60986232757568, 41.653258658953995, 0.0305, 2,0);
+
+var d = [];
+var d1 = [];
+var d2 = [];
+for(var j=0;j<b.length;j++){
+    d[j] = Cesium.Cartesian3.distance(a[j], b[j]);
+    d1[j] = d[j] / 2;
+    //d1[j] = Cesium.Cartesian3.distance(a[j], c[j]);
+    //d2[j] = Cesium.Cartesian3.distance(b[j], c[j]);
+}
+console.log(a[0]);
+console.log(b);
+console.log(c[0]);
+var positionFinal = computeFinalFlightPath(a,b,0);
+//console.log(position);
+/*var carto = [];
+var lon = [];
+var lat = [];*/
+
+    /*var carto  = Cesium.Ellipsoid.WGS84.cartesianToCartographic(positionFinal);     
+    var lon = Cesium.Math.toDegrees(carto.longitude); 
+    var lat = Cesium.Math.toDegrees(carto.latitude); */
+
+/*var carto  = Cesium.Ellipsoid.WGS84.cartesianToCartographic(pos);     
+var lon = Cesium.Math.toDegrees(carto.longitude); 
+var lat = Cesium.Math.toDegrees(carto.latitude); */
+
+
+   /* var corr = [lon[0], lat[0],
+    lon[1], lat[1]];*/
+    //console.log(locLonArr);
+    //console.log(locHeightArr[0]);
+    console.log(position);
+    console.log(positionFinal);
+    //console.log([locLonArr[0], locLatArr[0], locLonArr[1], locLatArr[1], locLonArr[2], locLatArr[2]]);
+
+
+
+        
+
+
+var entity = viewer.entities.add({
+
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : position,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+      
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.YELLOW
+        }),
+        width : 10
+    }
+});
+
+var entity1 = viewer.entities.add({
+
+    
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : position1,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+     
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.RED
+        }),
+        width : 10
+    }
+});
+
+var entity2 = viewer.entities.add({
+
+    
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : positionFinal,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+     
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.CYAN
+        }),
+        width : 10
+    }
+});
+
+/*var blueCorridor = viewer.entities.add({
+    name : 'Blue extruded corridor with beveled corners and outline',
+    corridor : {
+        positions : Cesium.Cartesian3.fromDegreesArray([locLonArr[0], locLatArr[0], locLonArr[1], locLatArr[1], locLonArr[2], locLatArr[2]]),
+        height : 500.0,
+        extrudedHeight : 500.0,
+        width : 500.0,
+        cornerType: Cesium.CornerType.BEVELED,
+        material : Cesium.Color.BLUE.withAlpha(0.5),
+        outline : true, // height or extrudedHeight must be set for outlines to display
+        outlineColor : Cesium.Color.WHITE
+    }
+});*/
+
+blueCorridor = viewer.entities.add({
+    name : 'Blue corridor',
+    polylineVolume : {
+        positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr[0], locLatArr[0], locHeightArr[0], 
+                                                               locLonArr[1], locLatArr[1], locHeightArr[1], 
+                                                               locLonArr[2], locLatArr[2], locHeightArr[2],
+                                                               locLonArr[3], locLatArr[3], locHeightArr[3],
+                                                               locLonArr[4], locLatArr[4], locHeightArr[4],
+                                                               locLonArr[5], locLatArr[5], locHeightArr[5],
+                                                               locLonArr[6], locLatArr[6], locHeightArr[6],
+                                                               locLonArr[7], locLatArr[7], locHeightArr[7],
+                                                               locLonArr[8], locLatArr[8], locHeightArr[8],
+                                                               locLonArr[9], locLatArr[9], locHeightArr[9]
+                                                               // locLonArr[10], locLatArr[10], locHeightArr[10],
+                                                               // locLonArr[11], locLatArr[11], locHeightArr[11],
+                                                               // locLonArr[12], locLatArr[12], locHeightArr[12],
+                                                               // locLonArr[13], locLatArr[13], locHeightArr[13],
+                                                               // locLonArr[14], locLatArr[14], locHeightArr[14],
+                                                               // locLonArr[15], locLatArr[15], locHeightArr[15],
+                                                               // locLonArr[16], locLatArr[16], locHeightArr[16],
+                                                               // locLonArr[17], locLatArr[17], locHeightArr[17],
+                                                               // locLonArr[18], locLatArr[18], locHeightArr[18],
+                                                               // locLonArr[19], locLatArr[19], locHeightArr[19],
+                                                               // locLonArr[20], locLatArr[20], locHeightArr[20],
+                                                               // locLonArr[21], locLatArr[21], locHeightArr[21],
+                                                               // locLonArr[22], locLatArr[22], locHeightArr[22],
+                                                               // locLonArr[23], locLatArr[23], locHeightArr[23],
+                                                               // locLonArr[24], locLatArr[24], locHeightArr[24],
+                                                               // locLonArr[25], locLatArr[25], locHeightArr[25],
+                                                               // locLonArr[26], locLatArr[26], locHeightArr[26]
+                                                               ]),
+        shape :[new Cesium.Cartesian2(-200, -200),
+                new Cesium.Cartesian2(200, -200),
+                new Cesium.Cartesian2(200, 200),
+                new Cesium.Cartesian2(-200, 200)],
+        cornerType : Cesium.CornerType.BEVELED,
+        material : Cesium.Color.WHITE.withAlpha(0.3),
+        //outline : true,
+        //outlineColor : Cesium.Color.BLACK
+    }
+});
+
+var yellowCorridor = viewer.entities.add({
+    name : 'Yellow corridor',
+    polylineVolume : {
+        positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr1[0], locLatArr1[0], locHeightArr1[0], 
+                                                               locLonArr1[1], locLatArr1[1], locHeightArr1[1], 
+                                                               locLonArr1[2], locLatArr1[2], locHeightArr1[2],
+                                                               locLonArr1[3], locLatArr1[3], locHeightArr1[3],
+                                                               locLonArr1[4], locLatArr1[4], locHeightArr1[4],
+                                                               locLonArr1[5], locLatArr1[5], locHeightArr1[5],
+                                                               locLonArr1[6], locLatArr1[6], locHeightArr1[6],
+                                                               locLonArr1[7], locLatArr1[7], locHeightArr1[7],
+                                                               locLonArr1[8], locLatArr1[8], locHeightArr1[8],
+                                                               locLonArr1[9], locLatArr1[9], locHeightArr1[9],
+                                                               locLonArr1[10], locLatArr1[10], locHeightArr1[10],
+                                                               locLonArr1[11], locLatArr1[11], locHeightArr1[11],
+                                                               locLonArr1[12], locLatArr1[12], locHeightArr1[12],
+                                                               locLonArr1[13], locLatArr1[13], locHeightArr1[13],
+                                                               locLonArr1[14], locLatArr1[14], locHeightArr1[14],
+                                                               locLonArr1[15], locLatArr1[15], locHeightArr1[15],
+                                                               locLonArr1[16], locLatArr1[16], locHeightArr1[16],
+                                                               locLonArr1[17], locLatArr1[17], locHeightArr1[17],
+                                                               locLonArr1[18], locLatArr1[18], locHeightArr1[18],
+                                                               locLonArr1[19], locLatArr1[19], locHeightArr1[19],
+                                                               locLonArr1[20], locLatArr1[20], locHeightArr1[20],
+                                                               locLonArr1[21], locLatArr1[21], locHeightArr1[21],
+                                                               locLonArr1[22], locLatArr1[22], locHeightArr1[22],
+                                                               locLonArr1[23], locLatArr1[23], locHeightArr1[23],
+                                                               locLonArr1[24], locLatArr1[24], locHeightArr1[24],
+                                                               locLonArr1[25], locLatArr1[25], locHeightArr1[25],
+                                                               locLonArr1[26], locLatArr1[26], locHeightArr1[26],
+                                                               locLonArr1[27], locLatArr1[27], locHeightArr1[27],
+                                                               ]),
+        shape :[new Cesium.Cartesian2(-200, -200),
+                new Cesium.Cartesian2(200, -200),
+                new Cesium.Cartesian2(200, 200),
+                new Cesium.Cartesian2(-200, 200)],
+        cornerType : Cesium.CornerType.BEVELED,
+        material : Cesium.Color.WHITE.withAlpha(0.2),
+        //outline : true,
+        //outlineColor : Cesium.Color.BLACK
+    }
+});
+
+var redCorridor = viewer.entities.add({
+    name : 'Red corridor',
+    polylineVolume : {
+        positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr2[0], locLatArr2[0], locHeightArr2[0], 
+                                                               locLonArr2[1], locLatArr2[1], locHeightArr2[1], 
+                                                               locLonArr2[2], locLatArr2[2], locHeightArr2[2],
+                                                               locLonArr2[3], locLatArr2[3], locHeightArr2[3],
+                                                               locLonArr2[4], locLatArr2[4], locHeightArr2[4],
+                                                               locLonArr2[5], locLatArr2[5], locHeightArr2[5],
+                                                               locLonArr2[6], locLatArr2[6], locHeightArr2[6],
+                                                               locLonArr2[7], locLatArr2[7], locHeightArr2[7],
+                                                               locLonArr2[8], locLatArr2[8], locHeightArr2[8],
+                                                               locLonArr2[9], locLatArr2[9], locHeightArr2[9]
+                                                               // locLonArr2[10], locLatArr2[10], locHeightArr2[10],
+                                                               // locLonArr2[11], locLatArr2[11], locHeightArr2[11],
+                                                               // locLonArr2[12], locLatArr2[12], locHeightArr2[12],
+                                                               // locLonArr2[13], locLatArr2[13], locHeightArr2[13],
+                                                               // locLonArr2[14], locLatArr2[14], locHeightArr2[14]
+                                                               // locLonArr2[15], locLatArr2[15], locHeightArr2[15],
+                                                               // locLonArr2[16], locLatArr2[16], locHeightArr2[16],
+                                                               // locLonArr2[17], locLatArr2[17], locHeightArr2[17],
+                                                               // locLonArr2[18], locLatArr2[18], locHeightArr2[18]
+                                                               ]),
+        shape :[new Cesium.Cartesian2(-200, -200),
+                new Cesium.Cartesian2(200, -200),
+                new Cesium.Cartesian2(200, 200),
+                new Cesium.Cartesian2(-200, 200)],
+        cornerType : Cesium.CornerType.BEVELED,
+        material : Cesium.Color.WHITE.withAlpha(0.2),
+        //outline : true,
+        //outlineColor : Cesium.Color.BLACK
+    }
+});
+
+
+
+
+viewer.zoomTo(viewer.entities);
+
+
+
+Sandcastle.addToolbarButton('UAV1 Path', function() {
+    // Put things back to the starting position.
+    //Sandcastle.reset();
+    Cesium.Math.setRandomNumberSeed(3);
+    viewer.entities.removeAll();
+    var position = computeFlightPath(-83.60986232757568, 41.653258658953995, 0.03, 1,0);
+    var entity = viewer.entities.add({
+
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : position,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+      
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.YELLOW
+        }),
+        width : 10
+    }
+
+    
+
+    });
+});
+
+
+Sandcastle.addToolbarButton('UAV1 Path With Box', function() {
+    // Put things back to the starting position.
+    //Sandcastle.reset();
+    Cesium.Math.setRandomNumberSeed(3);
+    viewer.entities.removeAll();
+    var position = computeFlightPathWithBox(-83.60986232757568, 41.653258658953995, 0.03, 1,0);
+    var entity = viewer.entities.add({
+
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : position,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+      
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.YELLOW
+        }),
+        width : 10
+    }
+
+    
+
+    });
+});
+
+Sandcastle.addToolbarButton('UAV2 Path', function() {
+    // Put things back to the starting position.
+    //Sandcastle.reset();
+    Cesium.Math.setRandomNumberSeed(3);
+    viewer.entities.removeAll();
+    var position1 = computeFlightPath2(-83.60986232757568, 41.653258658953995, 0.0305, 2,0);
+    var entity1 = viewer.entities.add({
+
+    
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : position1,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+     
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.RED
+        }),
+        width : 10
+    }
+    });
+});
+
+
+Sandcastle.addToolbarButton('UAV2 Path With Box', function() {
+    // Put things back to the starting position.
+    //Sandcastle.reset();
+    Cesium.Math.setRandomNumberSeed(3);
+    viewer.entities.removeAll();
+    var position1 = computeFlightPath2WithBox(-83.60986232757568, 41.653258658953995, 0.0305, 2,0);
+    var entity1 = viewer.entities.add({
+
+    
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : position1,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+     
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.RED
+        }),
+        width : 10
+    }
+    });
+});
+
+
+Sandcastle.addToolbarButton('Reference Path', function() {
+    // Put things back to the starting position.
+    //Sandcastle.reset();
+    Cesium.Math.setRandomNumberSeed(3);
+    viewer.entities.removeAll();
+    var position = computeFlightPath(-83.60986232757568, 41.653258658953995, 0.03, 1,0);
+    var position1 = computeFlightPath2(-83.60986232757568, 41.653258658953995, 0.0305, 2,0);
+    var positionFinal = computeFinalFlightPath(a,b,0);
+
+    var entity = viewer.entities.add({
+
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : position,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+      
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.YELLOW
+        }),
+        width : 10
+    }
+
+    
+
+});
+
+
+    var entity1 = viewer.entities.add({
+
+    
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : position1,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+     
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.RED
+        }),
+        width : 10
+    }
+});
+
+    var entity2 = viewer.entities.add({
+
+    
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : positionFinal,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+     
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.CYAN
+        }),
+        width : 10
+    }
+});
+
+
+
+});
+
+Sandcastle.addToolbarButton('Reference Path With Box', function() {
+    // Put things back to the starting position.
+    //Sandcastle.reset();
+    Cesium.Math.setRandomNumberSeed(3);
+    viewer.entities.removeAll();
+    var position = computeFlightPathWithBox(-83.60986232757568, 41.653258658953995, 0.03, 1,0);
+    var position1 = computeFlightPath2WithBox(-83.60986232757568, 41.653258658953995, 0.0305, 2,0);
+    var positionFinal = computeFinalFlightPathWithBox(a,b,0);
+
+    var entity = viewer.entities.add({
+
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : position,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+      
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.YELLOW
+        }),
+        width : 10
+    }
+
+    
+
+});
+
+
+    var entity1 = viewer.entities.add({
+
+    
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : position1,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+     
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.RED
+        }),
+        width : 10
+    }
+});
+
+    var entity2 = viewer.entities.add({
+
+    
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : positionFinal,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+     
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.CYAN
+        }),
+        width : 10
+    }
+});
+
+
+
+});
+
+Sandcastle.addToolbarButton('UAV Corridor 1', function() {
+    // Put things back to the starting position.
+    //Sandcastle.reset();
+    Cesium.Math.setRandomNumberSeed(3);
+    viewer.entities.removeAll();
+    var position = computeFlightPath(-83.60986232757568, 41.653258658953995, 0.03, 1,0);
+    var position1 = computeFlightPath2(-83.60986232757568, 41.653258658953995, 0.0305, 2,0);
+    var positionFinal = computeFinalFlightPath(a,b,0);
+
+    var entity = viewer.entities.add({
+
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : position,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+      
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.YELLOW
+        }),
+        width : 10
+    }
+
+    
+
+});
+
+
+    var entity1 = viewer.entities.add({
+
+    
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : position1,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+     
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.RED
+        }),
+        width : 10
+    }
+});
+
+    var entity2 = viewer.entities.add({
+
+    
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : positionFinal,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+     
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.CYAN
+        }),
+        width : 10
+    }
+});
+
+        var yellowCorridor = viewer.entities.add({
+        name : 'Yellow corridor',
+        polylineVolume : {
+            positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr1[0], locLatArr1[0], locHeightArr1[0], 
+                                                                   locLonArr1[1], locLatArr1[1], locHeightArr1[1], 
+                                                                   locLonArr1[2], locLatArr1[2], locHeightArr1[2],
+                                                                   locLonArr1[3], locLatArr1[3], locHeightArr1[3],
+                                                                   locLonArr1[4], locLatArr1[4], locHeightArr1[4],
+                                                                   locLonArr1[5], locLatArr1[5], locHeightArr1[5],
+                                                                   locLonArr1[6], locLatArr1[6], locHeightArr1[6],
+                                                                   locLonArr1[7], locLatArr1[7], locHeightArr1[7],
+                                                                   locLonArr1[8], locLatArr1[8], locHeightArr1[8],
+                                                                   locLonArr1[9], locLatArr1[9], locHeightArr1[9],
+                                                                   locLonArr1[10], locLatArr1[10], locHeightArr1[10],
+                                                                   locLonArr1[11], locLatArr1[11], locHeightArr1[11],
+                                                                   locLonArr1[12], locLatArr1[12], locHeightArr1[12],
+                                                                   locLonArr1[13], locLatArr1[13], locHeightArr1[13],
+                                                                   locLonArr1[14], locLatArr1[14], locHeightArr1[14],
+                                                                   locLonArr1[15], locLatArr1[15], locHeightArr1[15],
+                                                                   locLonArr1[16], locLatArr1[16], locHeightArr1[16],
+                                                                   locLonArr1[17], locLatArr1[17], locHeightArr1[17],
+                                                                   locLonArr1[18], locLatArr1[18], locHeightArr1[18],
+                                                                   locLonArr1[19], locLatArr1[19], locHeightArr1[19],
+                                                                   locLonArr1[20], locLatArr1[20], locHeightArr1[20],
+                                                                   locLonArr1[21], locLatArr1[21], locHeightArr1[21],
+                                                                   locLonArr1[22], locLatArr1[22], locHeightArr1[22],
+                                                                   locLonArr1[23], locLatArr1[23], locHeightArr1[23],
+                                                                   locLonArr1[24], locLatArr1[24], locHeightArr1[24],
+                                                                   locLonArr1[25], locLatArr1[25], locHeightArr1[25],
+                                                                   locLonArr1[26], locLatArr1[26], locHeightArr1[26],
+                                                                   locLonArr1[27], locLatArr1[27], locHeightArr1[27],
+                                                                   ]),
+            shape :[new Cesium.Cartesian2(-200, -200),
+                    new Cesium.Cartesian2(200, -200),
+                    new Cesium.Cartesian2(200, 200),
+                    new Cesium.Cartesian2(-200, 200)],
+            cornerType : Cesium.CornerType.BEVELED,
+            material : Cesium.Color.WHITE.withAlpha(0.2),
+            //outline : true,
+            //outlineColor : Cesium.Color.BLACK
+        }
+    });
+
+
+
+
+
+});
+
+Sandcastle.addToolbarButton('UAV Corridor 2', function() {
+    // Put things back to the starting position.
+    //Sandcastle.reset();
+    Cesium.Math.setRandomNumberSeed(3);
+    viewer.entities.removeAll();
+    var position = computeFlightPath(-83.60986232757568, 41.653258658953995, 0.03, 1,0);
+    var position1 = computeFlightPath2(-83.60986232757568, 41.653258658953995, 0.0305, 2,0);
+    var positionFinal = computeFinalFlightPath(a,b,0);
+
+    var entity = viewer.entities.add({
+
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : position,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+      
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.YELLOW
+        }),
+        width : 10
+    }
+
+    
+
+});
+
+
+    var entity1 = viewer.entities.add({
+
+    
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : position1,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+     
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.RED
+        }),
+        width : 10
+    }
+});
+
+    var entity2 = viewer.entities.add({
+
+    
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : positionFinal,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+     
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.CYAN
+        }),
+        width : 10
+    }
+});
+
+
+
+        var redCorridor = viewer.entities.add({
+        name : 'Red corridor',
+        polylineVolume : {
+            positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr2[0], locLatArr2[0], locHeightArr2[0], 
+                                                                   locLonArr2[1], locLatArr2[1], locHeightArr2[1], 
+                                                                   locLonArr2[2], locLatArr2[2], locHeightArr2[2],
+                                                                   locLonArr2[3], locLatArr2[3], locHeightArr2[3],
+                                                                   locLonArr2[4], locLatArr2[4], locHeightArr2[4],
+                                                                   locLonArr2[5], locLatArr2[5], locHeightArr2[5],
+                                                                   locLonArr2[6], locLatArr2[6], locHeightArr2[6],
+                                                                   locLonArr2[7], locLatArr2[7], locHeightArr2[7],
+                                                                   locLonArr2[8], locLatArr2[8], locHeightArr2[8],
+                                                                   locLonArr2[9], locLatArr2[9], locHeightArr2[9]
+                                                                   // locLonArr2[10], locLatArr2[10], locHeightArr2[10],
+                                                                   // locLonArr2[11], locLatArr2[11], locHeightArr2[11],
+                                                                   // locLonArr2[12], locLatArr2[12], locHeightArr2[12],
+                                                                   // locLonArr2[13], locLatArr2[13], locHeightArr2[13],
+                                                                   // locLonArr2[14], locLatArr2[14], locHeightArr2[14]
+                                                                   // locLonArr2[15], locLatArr2[15], locHeightArr2[15],
+                                                                   // locLonArr2[16], locLatArr2[16], locHeightArr2[16],
+                                                                   // locLonArr2[17], locLatArr2[17], locHeightArr2[17],
+                                                                   // locLonArr2[18], locLatArr2[18], locHeightArr2[18]
+                                                                   ]),
+            shape :[new Cesium.Cartesian2(-200, -200),
+                    new Cesium.Cartesian2(200, -200),
+                    new Cesium.Cartesian2(200, 200),
+                    new Cesium.Cartesian2(-200, 200)],
+            cornerType : Cesium.CornerType.BEVELED,
+            material : Cesium.Color.WHITE.withAlpha(0.2),
+            //outline : true,
+            //outlineColor : Cesium.Color.BLACK
+        }
+    });
+
+});
+
+Sandcastle.addToolbarButton('Reference Corridor', function() {
+    // Put things back to the starting position.
+    //Sandcastle.reset();
+    if(extp.length === 0) {
+            Cesium.Math.setRandomNumberSeed(3);
+            viewer.entities.removeAll();
+            var position = computeFlightPath(-83.60986232757568, 41.653258658953995, 0.03, 1,0);
+            var position1 = computeFlightPath2(-83.60986232757568, 41.653258658953995, 0.0305, 2,0);
+            var positionFinal = computeFinalFlightPath(a,b,0);
+
+            var entity = viewer.entities.add({
+
+            availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+                start : start,
+                stop : stop
+            })]),
+
+            //Use our computed positions
+            position : position,
+
+
+            //Automatically compute orientation based on position movement.
+            orientation : new Cesium.VelocityOrientationProperty(position),
+
+              
+            path : {
+                resolution : 1,
+                material : new Cesium.PolylineGlowMaterialProperty({
+                    glowPower : 0.1,
+                    color : Cesium.Color.YELLOW
+                }),
+                width : 10
+            }
+
+            
+
+        });
+
+
+            var entity1 = viewer.entities.add({
+
+            
+            availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+                start : start,
+                stop : stop
+            })]),
+
+            //Use our computed positions
+            position : position1,
+
+
+            //Automatically compute orientation based on position movement.
+            orientation : new Cesium.VelocityOrientationProperty(position),
+
+             
+            path : {
+                resolution : 1,
+                material : new Cesium.PolylineGlowMaterialProperty({
+                    glowPower : 0.1,
+                    color : Cesium.Color.RED
+                }),
+                width : 10
+            }
+        });
+
+            var entity2 = viewer.entities.add({
+
+            
+            availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+                start : start,
+                stop : stop
+            })]),
+
+            //Use our computed positions
+            position : positionFinal,
+
+
+            //Automatically compute orientation based on position movement.
+            orientation : new Cesium.VelocityOrientationProperty(position),
+
+             
+            path : {
+                resolution : 1,
+                material : new Cesium.PolylineGlowMaterialProperty({
+                    glowPower : 0.1,
+                    color : Cesium.Color.CYAN
+                }),
+                width : 10
+            }
+        });
+
+        blueCorridor = viewer.entities.add({
+        name : 'Blue corridor',
+        polylineVolume : {
+            positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr[0], locLatArr[0], locHeightArr[0], 
+                                                                   locLonArr[1], locLatArr[1], locHeightArr[1], 
+                                                                   locLonArr[2], locLatArr[2], locHeightArr[2],
+                                                                   locLonArr[3], locLatArr[3], locHeightArr[3],
+                                                                   locLonArr[4], locLatArr[4], locHeightArr[4],
+                                                                   locLonArr[5], locLatArr[5], locHeightArr[5],
+                                                                   locLonArr[6], locLatArr[6], locHeightArr[6],
+                                                                   locLonArr[7], locLatArr[7], locHeightArr[7],
+                                                                   locLonArr[8], locLatArr[8], locHeightArr[8],
+                                                                   locLonArr[9], locLatArr[9], locHeightArr[9]
+                                                                   // locLonArr[10], locLatArr[10], locHeightArr[10],
+                                                                   // locLonArr[11], locLatArr[11], locHeightArr[11],
+                                                                   // locLonArr[12], locLatArr[12], locHeightArr[12],
+                                                                   // locLonArr[13], locLatArr[13], locHeightArr[13],
+                                                                   // locLonArr[14], locLatArr[14], locHeightArr[14],
+                                                                   // locLonArr[15], locLatArr[15], locHeightArr[15],
+                                                                   // locLonArr[16], locLatArr[16], locHeightArr[16],
+                                                                   // locLonArr[17], locLatArr[17], locHeightArr[17],
+                                                                   // locLonArr[18], locLatArr[18], locHeightArr[18],
+                                                                   // locLonArr[19], locLatArr[19], locHeightArr[19],
+                                                                   // locLonArr[20], locLatArr[20], locHeightArr[20],
+                                                                   // locLonArr[21], locLatArr[21], locHeightArr[21],
+                                                                   // locLonArr[22], locLatArr[22], locHeightArr[22],
+                                                                   // locLonArr[23], locLatArr[23], locHeightArr[23],
+                                                                   // locLonArr[24], locLatArr[24], locHeightArr[24],
+                                                                   // locLonArr[25], locLatArr[25], locHeightArr[25],
+                                                                   // locLonArr[26], locLatArr[26], locHeightArr[26]
+                                                                   ]),
+            shape :[new Cesium.Cartesian2(-200, -200),
+                    new Cesium.Cartesian2(200, -200),
+                    new Cesium.Cartesian2(200, 200),
+                    new Cesium.Cartesian2(-200, 200)],
+            cornerType : Cesium.CornerType.BEVELED,
+            material : Cesium.Color.WHITE.withAlpha(0.3),
+            //outline : true,
+            //outlineColor : Cesium.Color.BLACK
+        }
+    });
+
+            var yellowCorridor = viewer.entities.add({
+            name : 'Yellow corridor',
+            polylineVolume : {
+                positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr1[0], locLatArr1[0], locHeightArr1[0], 
+                                                                       locLonArr1[1], locLatArr1[1], locHeightArr1[1], 
+                                                                       locLonArr1[2], locLatArr1[2], locHeightArr1[2],
+                                                                       locLonArr1[3], locLatArr1[3], locHeightArr1[3],
+                                                                       locLonArr1[4], locLatArr1[4], locHeightArr1[4],
+                                                                       locLonArr1[5], locLatArr1[5], locHeightArr1[5],
+                                                                       locLonArr1[6], locLatArr1[6], locHeightArr1[6],
+                                                                       locLonArr1[7], locLatArr1[7], locHeightArr1[7],
+                                                                       locLonArr1[8], locLatArr1[8], locHeightArr1[8],
+                                                                       locLonArr1[9], locLatArr1[9], locHeightArr1[9],
+                                                                       locLonArr1[10], locLatArr1[10], locHeightArr1[10],
+                                                                       locLonArr1[11], locLatArr1[11], locHeightArr1[11],
+                                                                       locLonArr1[12], locLatArr1[12], locHeightArr1[12],
+                                                                       locLonArr1[13], locLatArr1[13], locHeightArr1[13],
+                                                                       locLonArr1[14], locLatArr1[14], locHeightArr1[14],
+                                                                       locLonArr1[15], locLatArr1[15], locHeightArr1[15],
+                                                                       locLonArr1[16], locLatArr1[16], locHeightArr1[16],
+                                                                       locLonArr1[17], locLatArr1[17], locHeightArr1[17],
+                                                                       locLonArr1[18], locLatArr1[18], locHeightArr1[18],
+                                                                       locLonArr1[19], locLatArr1[19], locHeightArr1[19],
+                                                                       locLonArr1[20], locLatArr1[20], locHeightArr1[20],
+                                                                       locLonArr1[21], locLatArr1[21], locHeightArr1[21],
+                                                                       locLonArr1[22], locLatArr1[22], locHeightArr1[22],
+                                                                       locLonArr1[23], locLatArr1[23], locHeightArr1[23],
+                                                                       locLonArr1[24], locLatArr1[24], locHeightArr1[24],
+                                                                       locLonArr1[25], locLatArr1[25], locHeightArr1[25],
+                                                                       locLonArr1[26], locLatArr1[26], locHeightArr1[26],
+                                                                       locLonArr1[27], locLatArr1[27], locHeightArr1[27]
+                                                                       ]),
+                shape :[new Cesium.Cartesian2(-200, -200),
+                        new Cesium.Cartesian2(200, -200),
+                        new Cesium.Cartesian2(200, 200),
+                        new Cesium.Cartesian2(-200, 200)],
+                cornerType : Cesium.CornerType.BEVELED,
+                material : Cesium.Color.WHITE.withAlpha(0.2),
+                //outline : true,
+                //outlineColor : Cesium.Color.BLACK
+            }
+        });
+
+        var redCorridor = viewer.entities.add({
+        name : 'Red corridor',
+        polylineVolume : {
+            positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr2[0], locLatArr2[0], locHeightArr2[0], 
+                                                                   locLonArr2[1], locLatArr2[1], locHeightArr2[1], 
+                                                                   locLonArr2[2], locLatArr2[2], locHeightArr2[2],
+                                                                   locLonArr2[3], locLatArr2[3], locHeightArr2[3],
+                                                                   locLonArr2[4], locLatArr2[4], locHeightArr2[4],
+                                                                   locLonArr2[5], locLatArr2[5], locHeightArr2[5],
+                                                                   locLonArr2[6], locLatArr2[6], locHeightArr2[6],
+                                                                   locLonArr2[7], locLatArr2[7], locHeightArr2[7],
+                                                                   locLonArr2[8], locLatArr2[8], locHeightArr2[8],
+                                                                   locLonArr2[9], locLatArr2[9], locHeightArr2[9]
+                                                                   // locLonArr2[10], locLatArr2[10], locHeightArr2[10],
+                                                                   // locLonArr2[11], locLatArr2[11], locHeightArr2[11],
+                                                                   // locLonArr2[12], locLatArr2[12], locHeightArr2[12],
+                                                                   // locLonArr2[13], locLatArr2[13], locHeightArr2[13],
+                                                                   // locLonArr2[14], locLatArr2[14], locHeightArr2[14]
+                                                                   // locLonArr2[15], locLatArr2[15], locHeightArr2[15],
+                                                                   // locLonArr2[16], locLatArr2[16], locHeightArr2[16],
+                                                                   // locLonArr2[17], locLatArr2[17], locHeightArr2[17],
+                                                                   // locLonArr2[18], locLatArr2[18], locHeightArr2[18]
+                                                                   ]),
+            shape :[new Cesium.Cartesian2(-200, -200),
+                    new Cesium.Cartesian2(200, -200),
+                    new Cesium.Cartesian2(200, 200),
+                    new Cesium.Cartesian2(-200, 200)],
+            cornerType : Cesium.CornerType.BEVELED,
+            material : Cesium.Color.WHITE.withAlpha(0.2),
+            //outline : true,
+            //outlineColor : Cesium.Color.BLACK
+        }
+    });
+    }
+    if(extp.length > 0) {
+            Cesium.Math.setRandomNumberSeed(3);
+            viewer.entities.removeAll();
+            var position = computeFlightPath(-83.60986232757568, 41.653258658953995, 0.03, 1,0);
+            //var position1 = computeFlightPath2(-83.60986232757568, 41.653258658953995, 0.033, 2,0);
+            Cesium.Math.setRandomNumberSeed(3);
+            var position2 = computeFlightPath3(-83.60986232757568, 41.653258658953995, 0.0305, 2,0);
+            var positionFinal = computeFinalFlightPath(a,extp,0);
+
+            var entity = viewer.entities.add({
+
+            availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+                start : start,
+                stop : stop
+            })]),
+
+            //Use our computed positions
+            position : position,
+
+
+            //Automatically compute orientation based on position movement.
+            orientation : new Cesium.VelocityOrientationProperty(position),
+
+              
+            path : {
+                resolution : 1,
+                material : new Cesium.PolylineGlowMaterialProperty({
+                    glowPower : 0.1,
+                    color : Cesium.Color.YELLOW
+                }),
+                width : 10
+            }
+
+            
+
+        });
+
+
+            /*var entity1 = viewer.entities.add({
+
+            
+            availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+                start : start,
+                stop : stop
+            })]),
+
+            //Use our computed positions
+            position : position1,
+
+
+            //Automatically compute orientation based on position movement.
+            orientation : new Cesium.VelocityOrientationProperty(position),
+
+             
+            path : {
+                resolution : 1,
+                material : new Cesium.PolylineGlowMaterialProperty({
+                    glowPower : 0.1,
+                    color : Cesium.Color.RED
+                }),
+                width : 10
+            }
+        });*/
+
+            var entity2 = viewer.entities.add({
+
+            
+            availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+                start : start,
+                stop : stop
+            })]),
+
+            //Use our computed positions
+            position : positionFinal,
+
+
+            //Automatically compute orientation based on position movement.
+            orientation : new Cesium.VelocityOrientationProperty(position),
+
+             
+            path : {
+                resolution : 1,
+                material : new Cesium.PolylineGlowMaterialProperty({
+                    glowPower : 0.1,
+                    color : Cesium.Color.CYAN
+                }),
+                width : 10
+            }
+        });
+
+
+            var entity3 = viewer.entities.add({
+
+                availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+                    start : start,
+                    stop : stop
+                })]),
+
+                //Use our computed positions
+                position : position2,
+
+
+                //Automatically compute orientation based on position movement.
+                orientation : new Cesium.VelocityOrientationProperty(position),
+
+                  
+                path : {
+                    resolution : 1,
+                    material : new Cesium.PolylineGlowMaterialProperty({
+                        glowPower : 0.4,
+                        color : Cesium.Color.DARKGREY
+                    }),
+                    width : 20
+                }
+
+            
+
+            });
+
+
+
+
+        blueCorridor = viewer.entities.add({
+            name : 'Blue corridor',
+            polylineVolume : {
+                positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr[0], locLatArr[0], locHeightArr[0], 
+                                                                       locLonArr[1], locLatArr[1], locHeightArr[1], 
+                                                                       locLonArr[2], locLatArr[2], locHeightArr[2],
+                                                                       locLonArr[3], locLatArr[3], locHeightArr[3],
+                                                                       locLonArr[4], locLatArr[4], locHeightArr[4],
+                                                                       locLonArr[5], locLatArr[5], locHeightArr[5],
+                                                                       locLonArr[6], locLatArr[6], locHeightArr[6],
+                                                                       locLonArr[7], locLatArr[7], locHeightArr[7],
+                                                                       locLonArr[8], locLatArr[8], locHeightArr[8],
+                                                                       locLonArr[9], locLatArr[9], locHeightArr[9],
+                                                                       locLonArr[10], locLatArr[10], locHeightArr[10],
+                                                                       locLonArr[11], locLatArr[11], locHeightArr[11],
+                                                                       locLonArr[12], locLatArr[12], locHeightArr[12],
+                                                                       locLonArr[13], locLatArr[13], locHeightArr[13],
+                                                                       locLonArr[14], locLatArr[14], locHeightArr[14],
+                                                                       locLonArr[15], locLatArr[15], locHeightArr[15],
+                                                                       locLonArr[16], locLatArr[16], locHeightArr[16],
+                                                                       locLonArr[17], locLatArr[17], locHeightArr[17],
+                                                                       locLonArr[18], locLatArr[18], locHeightArr[18],
+                                                                       locLonArr[19], locLatArr[19], locHeightArr[19],
+                                                                       locLonArr[20], locLatArr[20], locHeightArr[20],
+                                                                       locLonArr[21], locLatArr[21], locHeightArr[21],
+                                                                       locLonArr[22], locLatArr[22], locHeightArr[22],
+                                                                       locLonArr[23], locLatArr[23], locHeightArr[23],
+                                                                       locLonArr[24], locLatArr[24], locHeightArr[24],
+                                                                       locLonArr[25], locLatArr[25], locHeightArr[25],
+                                                                       locLonArr[26], locLatArr[26], locHeightArr[26],
+                                                                       locLonArr[27], locLatArr[27], locHeightArr[27]
+                                                                       ]),
+                shape :[new Cesium.Cartesian2(-200, -200),
+                        new Cesium.Cartesian2(200, -200),
+                        new Cesium.Cartesian2(200, 200),
+                        new Cesium.Cartesian2(-200, 200)],
+                cornerType : Cesium.CornerType.BEVELED,
+                material : Cesium.Color.WHITE.withAlpha(0.3),
+                //outline : true,
+                //outlineColor : Cesium.Color.BLACK
+            }
+        });
+
+            var yellowCorridor = viewer.entities.add({
+                name : 'Yellow corridor',
+                polylineVolume : {
+                    positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr1[0], locLatArr1[0], locHeightArr1[0], 
+                                                                           locLonArr1[1], locLatArr1[1], locHeightArr1[1], 
+                                                                           locLonArr1[2], locLatArr1[2], locHeightArr1[2],
+                                                                           locLonArr1[3], locLatArr1[3], locHeightArr1[3],
+                                                                           locLonArr1[4], locLatArr1[4], locHeightArr1[4],
+                                                                           locLonArr1[5], locLatArr1[5], locHeightArr1[5],
+                                                                           locLonArr1[6], locLatArr1[6], locHeightArr1[6],
+                                                                           locLonArr1[7], locLatArr1[7], locHeightArr1[7],
+                                                                           locLonArr1[8], locLatArr1[8], locHeightArr1[8],
+                                                                           locLonArr1[9], locLatArr1[9], locHeightArr1[9],
+                                                                           locLonArr1[10], locLatArr1[10], locHeightArr1[10],
+                                                                           locLonArr1[11], locLatArr1[11], locHeightArr1[11],
+                                                                           locLonArr1[12], locLatArr1[12], locHeightArr1[12],
+                                                                           locLonArr1[13], locLatArr1[13], locHeightArr1[13],
+                                                                           locLonArr1[14], locLatArr1[14], locHeightArr1[14],
+                                                                           locLonArr1[15], locLatArr1[15], locHeightArr1[15],
+                                                                           locLonArr1[16], locLatArr1[16], locHeightArr1[16],
+                                                                           locLonArr1[17], locLatArr1[17], locHeightArr1[17],
+                                                                           locLonArr1[18], locLatArr1[18], locHeightArr1[18],
+                                                                           locLonArr1[19], locLatArr1[19], locHeightArr1[19],
+                                                                           locLonArr1[20], locLatArr1[20], locHeightArr1[20],
+                                                                           locLonArr1[21], locLatArr1[21], locHeightArr1[21],
+                                                                           locLonArr1[22], locLatArr1[22], locHeightArr1[22],
+                                                                           locLonArr1[23], locLatArr1[23], locHeightArr1[23],
+                                                                           locLonArr1[24], locLatArr1[24], locHeightArr1[24],
+                                                                           locLonArr1[25], locLatArr1[25], locHeightArr1[25],
+                                                                           locLonArr1[26], locLatArr1[26], locHeightArr1[26],
+                                                                           locLonArr1[27], locLatArr1[27], locHeightArr1[27]
+                                                                           ]),
+                    shape :[new Cesium.Cartesian2(-200, -200),
+                            new Cesium.Cartesian2(200, -200),
+                            new Cesium.Cartesian2(200, 200),
+                            new Cesium.Cartesian2(-200, 200)],
+                    cornerType : Cesium.CornerType.BEVELED,
+                    material : Cesium.Color.WHITE.withAlpha(0.2),
+                    //outline : true,
+                    //outlineColor : Cesium.Color.BLACK
+                }
+            });
+
+            /*var redCorridor = viewer.entities.add({
+                name : 'Red corridor',
+                polylineVolume : {
+                    positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr2[0], locLatArr2[0], locHeightArr2[0], 
+                                                                           locLonArr2[1], locLatArr2[1], locHeightArr2[1], 
+                                                                           locLonArr2[2], locLatArr2[2], locHeightArr2[2],
+                                                                           locLonArr2[3], locLatArr2[3], locHeightArr2[3],
+                                                                           locLonArr2[4], locLatArr2[4], locHeightArr2[4],
+                                                                           locLonArr2[5], locLatArr2[5], locHeightArr2[5],
+                                                                           locLonArr2[6], locLatArr2[6], locHeightArr2[6],
+                                                                           locLonArr2[7], locLatArr2[7], locHeightArr2[7],
+                                                                           locLonArr2[8], locLatArr2[8], locHeightArr2[8],
+                                                                           locLonArr2[9], locLatArr2[9], locHeightArr2[9]
+                                                                           // locLonArr2[10], locLatArr2[10], locHeightArr2[10],
+                                                                           // locLonArr2[11], locLatArr2[11], locHeightArr2[11],
+                                                                           // locLonArr2[12], locLatArr2[12], locHeightArr2[12],
+                                                                           // locLonArr2[13], locLatArr2[13], locHeightArr2[13],
+                                                                           // locLonArr2[14], locLatArr2[14], locHeightArr2[14]
+                                                                           // locLonArr2[15], locLatArr2[15], locHeightArr2[15],
+                                                                           // locLonArr2[16], locLatArr2[16], locHeightArr2[16],
+                                                                           // locLonArr2[17], locLatArr2[17], locHeightArr2[17],
+                                                                           // locLonArr2[18], locLatArr2[18], locHeightArr2[18]
+                                                                           ]),
+                    shape :[new Cesium.Cartesian2(-200, -200),
+                            new Cesium.Cartesian2(200, -200),
+                            new Cesium.Cartesian2(200, 200),
+                            new Cesium.Cartesian2(-200, 200)],
+                    cornerType : Cesium.CornerType.BEVELED,
+                    material : Cesium.Color.WHITE.withAlpha(0.2),
+                    //outline : true,
+                    //outlineColor : Cesium.Color.BLACK
+                }
+            });*/
+
+            var extpCorridor = viewer.entities.add({
+                name : 'Extrapolated corridor',
+                polylineVolume : {
+                    positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr3[0], locLatArr3[0], locHeightArr3[0], 
+                                                                           locLonArr3[1], locLatArr3[1], locHeightArr3[1], 
+                                                                           locLonArr3[2], locLatArr3[2], locHeightArr3[2],
+                                                                           locLonArr3[3], locLatArr3[3], locHeightArr3[3],
+                                                                           locLonArr3[4], locLatArr3[4], locHeightArr3[4],
+                                                                           locLonArr3[5], locLatArr3[5], locHeightArr3[5],
+                                                                           locLonArr3[6], locLatArr3[6], locHeightArr3[6],
+                                                                           locLonArr3[7], locLatArr3[7], locHeightArr3[7],
+                                                                           locLonArr3[8], locLatArr3[8], locHeightArr3[8],
+                                                                           locLonArr3[9], locLatArr3[9], locHeightArr3[9],
+                                                                           locLonArr3[10], locLatArr3[10], locHeightArr3[10],
+                                                                           locLonArr3[11], locLatArr3[11], locHeightArr3[11],
+                                                                           locLonArr3[12], locLatArr3[12], locHeightArr3[12],
+                                                                           locLonArr3[13], locLatArr3[13], locHeightArr3[13],
+                                                                           locLonArr3[14], locLatArr3[14], locHeightArr3[14],
+                                                                           locLonArr3[15], locLatArr3[15], locHeightArr3[15],
+                                                                           locLonArr3[16], locLatArr3[16], locHeightArr3[16],
+                                                                           locLonArr3[17], locLatArr3[17], locHeightArr3[17],
+                                                                           locLonArr3[18], locLatArr3[18], locHeightArr3[18],
+                                                                           locLonArr3[19], locLatArr3[19], locHeightArr3[19],
+                                                                           locLonArr3[20], locLatArr3[20], locHeightArr3[20],
+                                                                           locLonArr3[21], locLatArr3[21], locHeightArr3[21],
+                                                                           locLonArr3[22], locLatArr3[22], locHeightArr3[22],
+                                                                           locLonArr3[23], locLatArr3[23], locHeightArr3[23],
+                                                                           locLonArr3[24], locLatArr3[24], locHeightArr3[24],
+                                                                           locLonArr3[25], locLatArr3[25], locHeightArr3[25],
+                                                                           locLonArr3[26], locLatArr3[26], locHeightArr3[26],
+                                                                           locLonArr3[27], locLatArr3[27], locHeightArr3[27]
+                                                                           ]),
+                    shape :[new Cesium.Cartesian2(-200, -200),
+                            new Cesium.Cartesian2(200, -200),
+                            new Cesium.Cartesian2(200, 200),
+                            new Cesium.Cartesian2(-200, 200)],
+                    cornerType : Cesium.CornerType.BEVELED,
+                    material : Cesium.Color.WHITE.withAlpha(0.2),
+                    //outline : true,
+                    //outlineColor : Cesium.Color.BLACK
+                }
+            });
+    }
+    
+
+});
+
+Sandcastle.addToolbarButton('Extrapolation/Interpolation', function() {
+    Cesium.Math.setRandomNumberSeed(3);
+    console.log("extrapolate length before: " +extp.length);
+    viewer.entities.removeAll();
+    console.log(a.length);
+    console.log(b.length);
+    if(a.length < b.length){
+        var position = computeFlightPath(locLonArr1[a.length-1], locLatArr1[a.length-1], 0.03, 1,0);
+    }
+    else{
+        var position = computeFlightPath3(-83.60986232757568, 41.653258658953995, 0.0305, 2,0);
+    }
+    //var position = computeFlightPath(-83.60986232757568, 41.653258658953995, 0.03, 1);
+    console.log("extrapolate length after: " +extp.length);
+    //viewer.entities.removeAll();
+    var entity = viewer.entities.add({
+
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : position,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+      
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.4,
+            color : Cesium.Color.DARKGREY
+        }),
+        width : 20
+    }
+
+    
+
+    });
+    
+});
+
+Sandcastle.addToolbarButton('Only Corridors', function() {
+    // Put things back to the starting position.
+    //Sandcastle.reset();
+    if(extp.length === 0) {
+            Cesium.Math.setRandomNumberSeed(3);
+            viewer.entities.removeAll();
+            var position = computeFlightPath(-83.60986232757568, 41.653258658953995, 0.03, 1,1);
+            var position1 = computeFlightPath2(-83.60986232757568, 41.653258658953995, 0.0305, 2,1);
+            var positionFinal = computeFinalFlightPath(a,b,1);
+
+            /*var entity = viewer.entities.add({
+
+            availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+                start : start,
+                stop : stop
+            })]),
+
+            //Use our computed positions
+            position : position,
+
+
+            //Automatically compute orientation based on position movement.
+            orientation : new Cesium.VelocityOrientationProperty(position),
+
+              
+            path : {
+                resolution : 1,
+                material : new Cesium.PolylineGlowMaterialProperty({
+                    glowPower : 0.1,
+                    color : Cesium.Color.YELLOW
+                }),
+                width : 10
+            }
+
+            
+
+        });
+
+
+            var entity1 = viewer.entities.add({
+
+            
+            availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+                start : start,
+                stop : stop
+            })]),
+
+            //Use our computed positions
+            position : position1,
+
+
+            //Automatically compute orientation based on position movement.
+            orientation : new Cesium.VelocityOrientationProperty(position),
+
+             
+            path : {
+                resolution : 1,
+                material : new Cesium.PolylineGlowMaterialProperty({
+                    glowPower : 0.1,
+                    color : Cesium.Color.RED
+                }),
+                width : 10
+            }
+        });
+
+            var entity2 = viewer.entities.add({
+
+            
+            availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+                start : start,
+                stop : stop
+            })]),
+
+            //Use our computed positions
+            position : positionFinal,
+
+
+            //Automatically compute orientation based on position movement.
+            orientation : new Cesium.VelocityOrientationProperty(position),
+
+             
+            path : {
+                resolution : 1,
+                material : new Cesium.PolylineGlowMaterialProperty({
+                    glowPower : 0.1,
+                    color : Cesium.Color.CYAN
+                }),
+                width : 10
+            }
+        });*/
+
+        blueCorridor = viewer.entities.add({
+        name : 'Blue corridor',
+        polylineVolume : {
+            positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr[0], locLatArr[0], locHeightArr[0], 
+                                                                   locLonArr[1], locLatArr[1], locHeightArr[1], 
+                                                                   locLonArr[2], locLatArr[2], locHeightArr[2],
+                                                                   locLonArr[3], locLatArr[3], locHeightArr[3],
+                                                                   locLonArr[4], locLatArr[4], locHeightArr[4],
+                                                                   locLonArr[5], locLatArr[5], locHeightArr[5],
+                                                                   locLonArr[6], locLatArr[6], locHeightArr[6],
+                                                                   locLonArr[7], locLatArr[7], locHeightArr[7],
+                                                                   locLonArr[8], locLatArr[8], locHeightArr[8],
+                                                                   locLonArr[9], locLatArr[9], locHeightArr[9]
+                                                                   // locLonArr[10], locLatArr[10], locHeightArr[10],
+                                                                   // locLonArr[11], locLatArr[11], locHeightArr[11],
+                                                                   // locLonArr[12], locLatArr[12], locHeightArr[12],
+                                                                   // locLonArr[13], locLatArr[13], locHeightArr[13],
+                                                                   // locLonArr[14], locLatArr[14], locHeightArr[14],
+                                                                   // locLonArr[15], locLatArr[15], locHeightArr[15],
+                                                                   // locLonArr[16], locLatArr[16], locHeightArr[16],
+                                                                   // locLonArr[17], locLatArr[17], locHeightArr[17],
+                                                                   // locLonArr[18], locLatArr[18], locHeightArr[18],
+                                                                   // locLonArr[19], locLatArr[19], locHeightArr[19],
+                                                                   // locLonArr[20], locLatArr[20], locHeightArr[20],
+                                                                   // locLonArr[21], locLatArr[21], locHeightArr[21],
+                                                                   // locLonArr[22], locLatArr[22], locHeightArr[22],
+                                                                   // locLonArr[23], locLatArr[23], locHeightArr[23],
+                                                                   // locLonArr[24], locLatArr[24], locHeightArr[24],
+                                                                   // locLonArr[25], locLatArr[25], locHeightArr[25],
+                                                                   // locLonArr[26], locLatArr[26], locHeightArr[26]
+                                                                   ]),
+            shape :[new Cesium.Cartesian2(-200, -200),
+                    new Cesium.Cartesian2(200, -200),
+                    new Cesium.Cartesian2(200, 200),
+                    new Cesium.Cartesian2(-200, 200)],
+            cornerType : Cesium.CornerType.BEVELED,
+            material : Cesium.Color.WHITE.withAlpha(0.3),
+            //outline : true,
+            //outlineColor : Cesium.Color.BLACK
+        }
+    });
+
+            var yellowCorridor = viewer.entities.add({
+            name : 'Yellow corridor',
+            polylineVolume : {
+                positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr1[0], locLatArr1[0], locHeightArr1[0], 
+                                                                       locLonArr1[1], locLatArr1[1], locHeightArr1[1], 
+                                                                       locLonArr1[2], locLatArr1[2], locHeightArr1[2],
+                                                                       locLonArr1[3], locLatArr1[3], locHeightArr1[3],
+                                                                       locLonArr1[4], locLatArr1[4], locHeightArr1[4],
+                                                                       locLonArr1[5], locLatArr1[5], locHeightArr1[5],
+                                                                       locLonArr1[6], locLatArr1[6], locHeightArr1[6],
+                                                                       locLonArr1[7], locLatArr1[7], locHeightArr1[7],
+                                                                       locLonArr1[8], locLatArr1[8], locHeightArr1[8],
+                                                                       locLonArr1[9], locLatArr1[9], locHeightArr1[9],
+                                                                       locLonArr1[10], locLatArr1[10], locHeightArr1[10],
+                                                                       locLonArr1[11], locLatArr1[11], locHeightArr1[11],
+                                                                       locLonArr1[12], locLatArr1[12], locHeightArr1[12],
+                                                                       locLonArr1[13], locLatArr1[13], locHeightArr1[13],
+                                                                       locLonArr1[14], locLatArr1[14], locHeightArr1[14],
+                                                                       locLonArr1[15], locLatArr1[15], locHeightArr1[15],
+                                                                       locLonArr1[16], locLatArr1[16], locHeightArr1[16],
+                                                                       locLonArr1[17], locLatArr1[17], locHeightArr1[17],
+                                                                       locLonArr1[18], locLatArr1[18], locHeightArr1[18],
+                                                                       locLonArr1[19], locLatArr1[19], locHeightArr1[19],
+                                                                       locLonArr1[20], locLatArr1[20], locHeightArr1[20],
+                                                                       locLonArr1[21], locLatArr1[21], locHeightArr1[21],
+                                                                       locLonArr1[22], locLatArr1[22], locHeightArr1[22],
+                                                                       locLonArr1[23], locLatArr1[23], locHeightArr1[23],
+                                                                       locLonArr1[24], locLatArr1[24], locHeightArr1[24],
+                                                                       locLonArr1[25], locLatArr1[25], locHeightArr1[25],
+                                                                       locLonArr1[26], locLatArr1[26], locHeightArr1[26],
+                                                                       locLonArr1[27], locLatArr1[27], locHeightArr1[27]
+                                                                       ]),
+                shape :[new Cesium.Cartesian2(-200, -200),
+                        new Cesium.Cartesian2(200, -200),
+                        new Cesium.Cartesian2(200, 200),
+                        new Cesium.Cartesian2(-200, 200)],
+                cornerType : Cesium.CornerType.BEVELED,
+                material : Cesium.Color.WHITE.withAlpha(0.2),
+                //outline : true,
+                //outlineColor : Cesium.Color.BLACK
+            }
+        });
+
+        var redCorridor = viewer.entities.add({
+        name : 'Red corridor',
+        polylineVolume : {
+            positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr2[0], locLatArr2[0], locHeightArr2[0], 
+                                                                   locLonArr2[1], locLatArr2[1], locHeightArr2[1], 
+                                                                   locLonArr2[2], locLatArr2[2], locHeightArr2[2],
+                                                                   locLonArr2[3], locLatArr2[3], locHeightArr2[3],
+                                                                   locLonArr2[4], locLatArr2[4], locHeightArr2[4],
+                                                                   locLonArr2[5], locLatArr2[5], locHeightArr2[5],
+                                                                   locLonArr2[6], locLatArr2[6], locHeightArr2[6],
+                                                                   locLonArr2[7], locLatArr2[7], locHeightArr2[7],
+                                                                   locLonArr2[8], locLatArr2[8], locHeightArr2[8],
+                                                                   locLonArr2[9], locLatArr2[9], locHeightArr2[9]
+                                                                   // locLonArr2[10], locLatArr2[10], locHeightArr2[10],
+                                                                   // locLonArr2[11], locLatArr2[11], locHeightArr2[11],
+                                                                   // locLonArr2[12], locLatArr2[12], locHeightArr2[12],
+                                                                   // locLonArr2[13], locLatArr2[13], locHeightArr2[13],
+                                                                   // locLonArr2[14], locLatArr2[14], locHeightArr2[14]
+                                                                   // locLonArr2[15], locLatArr2[15], locHeightArr2[15],
+                                                                   // locLonArr2[16], locLatArr2[16], locHeightArr2[16],
+                                                                   // locLonArr2[17], locLatArr2[17], locHeightArr2[17],
+                                                                   // locLonArr2[18], locLatArr2[18], locHeightArr2[18]
+                                                                   ]),
+            shape :[new Cesium.Cartesian2(-200, -200),
+                    new Cesium.Cartesian2(200, -200),
+                    new Cesium.Cartesian2(200, 200),
+                    new Cesium.Cartesian2(-200, 200)],
+            cornerType : Cesium.CornerType.BEVELED,
+            material : Cesium.Color.WHITE.withAlpha(0.2),
+            //outline : true,
+            //outlineColor : Cesium.Color.BLACK
+        }
+    });
+    }
+    if(extp.length > 0) {
+            Cesium.Math.setRandomNumberSeed(3);
+            viewer.entities.removeAll();
+            var position = computeFlightPath(-83.60986232757568, 41.653258658953995, 0.03, 1,1);
+            var position1 = computeFlightPath2(-83.60986232757568, 41.653258658953995, 0.0305, 2,1);
+            Cesium.Math.setRandomNumberSeed(3);
+            var position2 = computeFlightPath3(-83.60986232757568, 41.653258658953995, 0.0305, 2,1);
+            var positionFinal = computeFinalFlightPath(a,extp,1);
+
+            /*var entity = viewer.entities.add({
+
+            availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+                start : start,
+                stop : stop
+            })]),
+
+            //Use our computed positions
+            position : position,
+
+
+            //Automatically compute orientation based on position movement.
+            orientation : new Cesium.VelocityOrientationProperty(position),
+
+              
+            path : {
+                resolution : 1,
+                material : new Cesium.PolylineGlowMaterialProperty({
+                    glowPower : 0.1,
+                    color : Cesium.Color.YELLOW
+                }),
+                width : 10
+            }
+
+            
+
+        });
+
+
+            var entity1 = viewer.entities.add({
+
+            
+            availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+                start : start,
+                stop : stop
+            })]),
+
+            //Use our computed positions
+            position : position1,
+
+
+            //Automatically compute orientation based on position movement.
+            orientation : new Cesium.VelocityOrientationProperty(position),
+
+             
+            path : {
+                resolution : 1,
+                material : new Cesium.PolylineGlowMaterialProperty({
+                    glowPower : 0.1,
+                    color : Cesium.Color.RED
+                }),
+                width : 10
+            }
+        });
+
+            var entity2 = viewer.entities.add({
+
+            
+            availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+                start : start,
+                stop : stop
+            })]),
+
+            //Use our computed positions
+            position : positionFinal,
+
+
+            //Automatically compute orientation based on position movement.
+            orientation : new Cesium.VelocityOrientationProperty(position),
+
+             
+            path : {
+                resolution : 1,
+                material : new Cesium.PolylineGlowMaterialProperty({
+                    glowPower : 0.1,
+                    color : Cesium.Color.CYAN
+                }),
+                width : 10
+            }
+        });
+
+
+            var entity3 = viewer.entities.add({
+
+                availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+                    start : start,
+                    stop : stop
+                })]),
+
+                //Use our computed positions
+                position : position2,
+
+
+                //Automatically compute orientation based on position movement.
+                orientation : new Cesium.VelocityOrientationProperty(position),
+
+                  
+                path : {
+                    resolution : 1,
+                    material : new Cesium.PolylineGlowMaterialProperty({
+                        glowPower : 0.4,
+                        color : Cesium.Color.DARKGREY
+                    }),
+                    width : 20
+                }
+
+            
+
+            });*/
+
+
+
+
+        blueCorridor = viewer.entities.add({
+            name : 'Blue corridor',
+            polylineVolume : {
+                positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr[0], locLatArr[0], locHeightArr[0], 
+                                                                       locLonArr[1], locLatArr[1], locHeightArr[1], 
+                                                                       locLonArr[2], locLatArr[2], locHeightArr[2],
+                                                                       locLonArr[3], locLatArr[3], locHeightArr[3],
+                                                                       locLonArr[4], locLatArr[4], locHeightArr[4],
+                                                                       locLonArr[5], locLatArr[5], locHeightArr[5],
+                                                                       locLonArr[6], locLatArr[6], locHeightArr[6],
+                                                                       locLonArr[7], locLatArr[7], locHeightArr[7],
+                                                                       locLonArr[8], locLatArr[8], locHeightArr[8],
+                                                                       locLonArr[9], locLatArr[9], locHeightArr[9],
+                                                                       locLonArr[10], locLatArr[10], locHeightArr[10],
+                                                                       locLonArr[11], locLatArr[11], locHeightArr[11],
+                                                                       locLonArr[12], locLatArr[12], locHeightArr[12],
+                                                                       locLonArr[13], locLatArr[13], locHeightArr[13],
+                                                                       locLonArr[14], locLatArr[14], locHeightArr[14],
+                                                                       locLonArr[15], locLatArr[15], locHeightArr[15],
+                                                                       locLonArr[16], locLatArr[16], locHeightArr[16],
+                                                                       locLonArr[17], locLatArr[17], locHeightArr[17],
+                                                                       locLonArr[18], locLatArr[18], locHeightArr[18],
+                                                                       locLonArr[19], locLatArr[19], locHeightArr[19],
+                                                                       locLonArr[20], locLatArr[20], locHeightArr[20],
+                                                                       locLonArr[21], locLatArr[21], locHeightArr[21],
+                                                                       locLonArr[22], locLatArr[22], locHeightArr[22],
+                                                                       locLonArr[23], locLatArr[23], locHeightArr[23],
+                                                                       locLonArr[24], locLatArr[24], locHeightArr[24],
+                                                                       locLonArr[25], locLatArr[25], locHeightArr[25],
+                                                                       locLonArr[26], locLatArr[26], locHeightArr[26],
+                                                                       locLonArr[27], locLatArr[27], locHeightArr[27]
+                                                                       ]),
+                shape :[new Cesium.Cartesian2(-200, -200),
+                        new Cesium.Cartesian2(200, -200),
+                        new Cesium.Cartesian2(200, 200),
+                        new Cesium.Cartesian2(-200, 200)],
+                cornerType : Cesium.CornerType.BEVELED,
+                material : Cesium.Color.WHITE.withAlpha(0.3),
+                //outline : true,
+                //outlineColor : Cesium.Color.BLACK
+            }
+        });
+
+            var yellowCorridor = viewer.entities.add({
+                name : 'Yellow corridor',
+                polylineVolume : {
+                    positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr1[0], locLatArr1[0], locHeightArr1[0], 
+                                                                           locLonArr1[1], locLatArr1[1], locHeightArr1[1], 
+                                                                           locLonArr1[2], locLatArr1[2], locHeightArr1[2],
+                                                                           locLonArr1[3], locLatArr1[3], locHeightArr1[3],
+                                                                           locLonArr1[4], locLatArr1[4], locHeightArr1[4],
+                                                                           locLonArr1[5], locLatArr1[5], locHeightArr1[5],
+                                                                           locLonArr1[6], locLatArr1[6], locHeightArr1[6],
+                                                                           locLonArr1[7], locLatArr1[7], locHeightArr1[7],
+                                                                           locLonArr1[8], locLatArr1[8], locHeightArr1[8],
+                                                                           locLonArr1[9], locLatArr1[9], locHeightArr1[9],
+                                                                           locLonArr1[10], locLatArr1[10], locHeightArr1[10],
+                                                                           locLonArr1[11], locLatArr1[11], locHeightArr1[11],
+                                                                           locLonArr1[12], locLatArr1[12], locHeightArr1[12],
+                                                                           locLonArr1[13], locLatArr1[13], locHeightArr1[13],
+                                                                           locLonArr1[14], locLatArr1[14], locHeightArr1[14],
+                                                                           locLonArr1[15], locLatArr1[15], locHeightArr1[15],
+                                                                           locLonArr1[16], locLatArr1[16], locHeightArr1[16],
+                                                                           locLonArr1[17], locLatArr1[17], locHeightArr1[17],
+                                                                           locLonArr1[18], locLatArr1[18], locHeightArr1[18],
+                                                                           locLonArr1[19], locLatArr1[19], locHeightArr1[19],
+                                                                           locLonArr1[20], locLatArr1[20], locHeightArr1[20],
+                                                                           locLonArr1[21], locLatArr1[21], locHeightArr1[21],
+                                                                           locLonArr1[22], locLatArr1[22], locHeightArr1[22],
+                                                                           locLonArr1[23], locLatArr1[23], locHeightArr1[23],
+                                                                           locLonArr1[24], locLatArr1[24], locHeightArr1[24],
+                                                                           locLonArr1[25], locLatArr1[25], locHeightArr1[25],
+                                                                           locLonArr1[26], locLatArr1[26], locHeightArr1[26],
+                                                                           locLonArr1[27], locLatArr1[27], locHeightArr1[27]
+                                                                           ]),
+                    shape :[new Cesium.Cartesian2(-200, -200),
+                            new Cesium.Cartesian2(200, -200),
+                            new Cesium.Cartesian2(200, 200),
+                            new Cesium.Cartesian2(-200, 200)],
+                    cornerType : Cesium.CornerType.BEVELED,
+                    material : Cesium.Color.WHITE.withAlpha(0.2),
+                    //outline : true,
+                    //outlineColor : Cesium.Color.BLACK
+                }
+            });
+
+            var redCorridor = viewer.entities.add({
+                name : 'Red corridor',
+                polylineVolume : {
+                    positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr2[0], locLatArr2[0], locHeightArr2[0], 
+                                                                           locLonArr2[1], locLatArr2[1], locHeightArr2[1], 
+                                                                           locLonArr2[2], locLatArr2[2], locHeightArr2[2],
+                                                                           locLonArr2[3], locLatArr2[3], locHeightArr2[3],
+                                                                           locLonArr2[4], locLatArr2[4], locHeightArr2[4],
+                                                                           locLonArr2[5], locLatArr2[5], locHeightArr2[5],
+                                                                           locLonArr2[6], locLatArr2[6], locHeightArr2[6],
+                                                                           locLonArr2[7], locLatArr2[7], locHeightArr2[7],
+                                                                           locLonArr2[8], locLatArr2[8], locHeightArr2[8],
+                                                                           locLonArr2[9], locLatArr2[9], locHeightArr2[9]
+                                                                           // locLonArr2[10], locLatArr2[10], locHeightArr2[10],
+                                                                           // locLonArr2[11], locLatArr2[11], locHeightArr2[11],
+                                                                           // locLonArr2[12], locLatArr2[12], locHeightArr2[12],
+                                                                           // locLonArr2[13], locLatArr2[13], locHeightArr2[13],
+                                                                           // locLonArr2[14], locLatArr2[14], locHeightArr2[14]
+                                                                           // locLonArr2[15], locLatArr2[15], locHeightArr2[15],
+                                                                           // locLonArr2[16], locLatArr2[16], locHeightArr2[16],
+                                                                           // locLonArr2[17], locLatArr2[17], locHeightArr2[17],
+                                                                           // locLonArr2[18], locLatArr2[18], locHeightArr2[18]
+                                                                           ]),
+                    shape :[new Cesium.Cartesian2(-200, -200),
+                            new Cesium.Cartesian2(200, -200),
+                            new Cesium.Cartesian2(200, 200),
+                            new Cesium.Cartesian2(-200, 200)],
+                    cornerType : Cesium.CornerType.BEVELED,
+                    material : Cesium.Color.WHITE.withAlpha(0.2),
+                    //outline : true,
+                    //outlineColor : Cesium.Color.BLACK
+                }
+            });
+
+            var extpCorridor = viewer.entities.add({
+                name : 'Extrapolated corridor',
+                polylineVolume : {
+                    positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr3[0], locLatArr3[0], locHeightArr3[0], 
+                                                                           locLonArr3[1], locLatArr3[1], locHeightArr3[1], 
+                                                                           locLonArr3[2], locLatArr3[2], locHeightArr3[2],
+                                                                           locLonArr3[3], locLatArr3[3], locHeightArr3[3],
+                                                                           locLonArr3[4], locLatArr3[4], locHeightArr3[4],
+                                                                           locLonArr3[5], locLatArr3[5], locHeightArr3[5],
+                                                                           locLonArr3[6], locLatArr3[6], locHeightArr3[6],
+                                                                           locLonArr3[7], locLatArr3[7], locHeightArr3[7],
+                                                                           locLonArr3[8], locLatArr3[8], locHeightArr3[8],
+                                                                           locLonArr3[9], locLatArr3[9], locHeightArr3[9],
+                                                                           locLonArr3[10], locLatArr3[10], locHeightArr3[10],
+                                                                           locLonArr3[11], locLatArr3[11], locHeightArr3[11],
+                                                                           locLonArr3[12], locLatArr3[12], locHeightArr3[12],
+                                                                           locLonArr3[13], locLatArr3[13], locHeightArr3[13],
+                                                                           locLonArr3[14], locLatArr3[14], locHeightArr3[14],
+                                                                           locLonArr3[15], locLatArr3[15], locHeightArr3[15],
+                                                                           locLonArr3[16], locLatArr3[16], locHeightArr3[16],
+                                                                           locLonArr3[17], locLatArr3[17], locHeightArr3[17],
+                                                                           locLonArr3[18], locLatArr3[18], locHeightArr3[18],
+                                                                           locLonArr3[19], locLatArr3[19], locHeightArr3[19],
+                                                                           locLonArr3[20], locLatArr3[20], locHeightArr3[20],
+                                                                           locLonArr3[21], locLatArr3[21], locHeightArr3[21],
+                                                                           locLonArr3[22], locLatArr3[22], locHeightArr3[22],
+                                                                           locLonArr3[23], locLatArr3[23], locHeightArr3[23],
+                                                                           locLonArr3[24], locLatArr3[24], locHeightArr3[24],
+                                                                           locLonArr3[25], locLatArr3[25], locHeightArr3[25],
+                                                                           locLonArr3[26], locLatArr3[26], locHeightArr3[26],
+                                                                           locLonArr3[27], locLatArr3[27], locHeightArr3[27]
+                                                                           ]),
+                    shape :[new Cesium.Cartesian2(-200, -200),
+                            new Cesium.Cartesian2(200, -200),
+                            new Cesium.Cartesian2(200, 200),
+                            new Cesium.Cartesian2(-200, 200)],
+                    cornerType : Cesium.CornerType.BEVELED,
+                    material : Cesium.Color.WHITE.withAlpha(0.2),
+                    //outline : true,
+                    //outlineColor : Cesium.Color.BLACK
+                }
+            });
+    }
+    
+
+});
+
+
+/*Sandcastle.addToolbarButton('Extrpolated Corridor', function() {
+    // Put things back to the starting position.
+    //Sandcastle.reset();
+    Cesium.Math.setRandomNumberSeed(3);
+    viewer.entities.removeAll();
+    var position = computeFlightPath(-83.60986232757568, 41.653258658953995, 0.03, 1);
+    var position1 = computeFlightPath2(-83.60986232757568, 41.653258658953995, 0.033, 2);
+    var position2 = computeFlightPath3(-83.60986232757568, 41.653258658953995, 0.033, 2);
+    var positionFinal = computeFinalFlightPath(a,b);
+
+    var entity = viewer.entities.add({
+
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : position,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+      
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.YELLOW
+        }),
+        width : 10
+    }
+
+    
+
+});
+
+
+    var entity1 = viewer.entities.add({
+
+    
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : position1,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+     
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.RED
+        }),
+        width : 10
+    }
+});
+
+    var entity2 = viewer.entities.add({
+
+    
+    availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start : start,
+        stop : stop
+    })]),
+
+    //Use our computed positions
+    position : positionFinal,
+
+
+    //Automatically compute orientation based on position movement.
+    orientation : new Cesium.VelocityOrientationProperty(position),
+
+     
+    path : {
+        resolution : 1,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.1,
+            color : Cesium.Color.CYAN
+        }),
+        width : 10
+    }
+});
+
+blueCorridor = viewer.entities.add({
+    name : 'Blue corridor',
+    polylineVolume : {
+        positions : Cesium.Cartesian3.fromDegreesArrayHeights([locLonArr[0], locLatArr[0], locHeightArr[0], 
+                                                               locLonArr[1], locLatArr[1], locHeightArr[1], 
+                                                               locLonArr[2], locLatArr[2], locHeightArr[2],
+                                                               locLonArr[3], locLatArr[3], locHeightArr[3],
+                                                               locLonArr[4], locLatArr[4], locHeightArr[4],
+                                                               locLonArr[5], locLatArr[5], locHeightArr[5],
+                                                               locLonArr[6], locLatArr[6], locHeightArr[6],
+                                                               locLonArr[7], locLatArr[7], locHeightArr[7],
+                                                               locLonArr[8], locLatArr[8], locHeightArr[8],
+                                                               locLonArr[9], locLatArr[9], locHeightArr[9],
+                                                               locLonArr[10], locLatArr[10], locHeightArr[10],
+                                                               locLonArr[11], locLatArr[11], locHeightArr[11],
+                                                               locLonArr[12], locLatArr[12], locHeightArr[12],
+                                                               locLonArr[13], locLatArr[13], locHeightArr[13],
+                                                               locLonArr[14], locLatArr[14], locHeightArr[14]
+                                                               // locLonArr[15], locLatArr[15], locHeightArr[15],
+                                                               // locLonArr[16], locLatArr[16], locHeightArr[16],
+                                                               // locLonArr[17], locLatArr[17], locHeightArr[17],
+                                                               // locLonArr[18], locLatArr[18], locHeightArr[18]
+                                                               ]),
+        shape :[new Cesium.Cartesian2(-200, -200),
+                new Cesium.Cartesian2(200, -200),
+                new Cesium.Cartesian2(200, 200),
+                new Cesium.Cartesian2(-200, 200)],
+        cornerType : Cesium.CornerType.BEVELED,
+        material : Cesium.Color.BLUE.withAlpha(0.3),
+        outline : true,
+        outlineColor : Cesium.Color.BLACK
+    }
+});
+
+});*/
+
+
+//Add button to compute the error/uncertainty in estimation
+Sandcastle.addToolbarButton('Estimation Variance', function() {
+    alert("Variance at each slice: "+d1);
+    var sumSquareError = 0;
+    for(var j=0;j<d1.length;j++){
+    sumSquareError = sumSquareError + (d1[j] * d1[j]);
+
+
+    //d1[j] = Cesium.Cartesian3.distance(a[j], c[j]);
+    //d2[j] = Cesium.Cartesian3.distance(b[j], c[j]);
+}
+var meanSquareError = sumSquareError / d1.length;
+var RMSE = Math.sqrt(meanSquareError);
+alert("Mean Square Error: "+meanSquareError+ " Root Mean Square Error: "+RMSE);
+window.open("http://localhost:8080/Apps/ErrorGraph3.html");
+});
+
+
+//Add button to view the path from the top down
+Sandcastle.addToolbarButton('View Top Down', function() {
+    viewer.trackedEntity = undefined;
+    viewer.zoomTo(viewer.entities, new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-90), 12000));
+});
+
+//Add button to view the path from the side
+Sandcastle.addToolbarButton('View Side', function() {
+    viewer.trackedEntity = undefined;
+    viewer.zoomTo(viewer.entities, new Cesium.HeadingPitchRange(Cesium.Math.toRadians(-90), Cesium.Math.toRadians(-15), 10000));
+});
+
+//Add button to track the entity as it moves
+/*Sandcastle.addToolbarButton('Reference Corridor', function() {
+    viewer.trackedEntity = entity2;
+});*/
+
+Sandcastle.addToolbarButton('Reset demo', function() {
+    // Put things back to the starting position.
+    //Sandcastle.reset();
+    window.location.reload(false);
+});
+
+//Add a combo box for selecting each interpolation mode.
+/*Sandcastle.addToolbarMenu([{
+    text : 'Interpolation Path#1: Linear Approximation',
+    onselect : function() {
+        entity1.position.setInterpolationOptions({
+            interpolationDegree : 1,
+            interpolationAlgorithm : Cesium.LinearApproximation
+        });
+    }
+}, {
+    text : 'Interpolation Path#1: Lagrange Polynomial Approximation',
+    onselect : function() {
+        entity1.position.setInterpolationOptions({
+            interpolationDegree : 5,
+            interpolationAlgorithm : Cesium.LagrangePolynomialApproximation
+        });
+    }
+}, {
+    text : 'Interpolation Path#1: Hermite Polynomial Approximation',
+    onselect : function() {
+        entity1.position.setInterpolationOptions({
+            interpolationDegree : 2,
+            interpolationAlgorithm : Cesium.HermitePolynomialApproximation
+        });
+    }
+}], 'interpolationMenu');
+
+//Add a combo box for selecting each interpolation mode.
+Sandcastle.addToolbarMenu([{
+    text : 'Interpolation Path#2: Linear Approximation',
+    onselect : function() {
+        entity.position.setInterpolationOptions({
+            interpolationDegree : 1,
+            interpolationAlgorithm : Cesium.LinearApproximation
+        });
+    }
+}, {
+    text : 'Interpolation Path#2: Lagrange Polynomial Approximation',
+    onselect : function() {
+        entity.position.setInterpolationOptions({
+            interpolationDegree : 5,
+            interpolationAlgorithm : Cesium.LagrangePolynomialApproximation
+        });
+    }
+}, {
+    text : 'Interpolation Path#2: Hermite Polynomial Approximation',
+    onselect : function() {
+        entity.position.setInterpolationOptions({
+            interpolationDegree : 2,
+            interpolationAlgorithm : Cesium.HermitePolynomialApproximation
+        });
+    }
+}], 'interpolationMenuTwo');
+
+//Add a combo box for selecting each interpolation mode.
+Sandcastle.addToolbarMenu([{
+    text : 'Interpolation Ref Path: Linear Approximation',
+    onselect : function() {
+        entity2.position.setInterpolationOptions({
+            interpolationDegree : 1,
+            interpolationAlgorithm : Cesium.LinearApproximation
+        });
+    }
+}, {
+    text : 'Interpolation Ref Path: Lagrange Polynomial Approximation',
+    onselect : function() {
+        entity2.position.setInterpolationOptions({
+            interpolationDegree : 5,
+            interpolationAlgorithm : Cesium.LagrangePolynomialApproximation
+        });
+    }
+}, {
+    text : 'Interpolation Ref Path: Hermite Polynomial Approximation',
+    onselect : function() {
+        entity2.position.setInterpolationOptions({
+            interpolationDegree : 2,
+            interpolationAlgorithm : Cesium.HermitePolynomialApproximation
+        });
+    }
+}], 'interpolationMenuThree');
+
+//extrapolation
+Sandcastle.addToolbarMenu([{
+    text : 'Extrapolation',
+    onselect : function() {
+            entity1.position.forwardExtrapolationType = Cesium.ExtrapolationType.EXTRAPOLATE;
+            //entity1.position.forwardExtrapolationDuration = 150;
+        }
+},{
+    text : 'Interpolation Path#1: Linear Polynomial Approximation',
+    onselect : function() {
+        entity1.position.setInterpolationOptions({
+            interpolationDegree : 1,
+            interpolationAlgorithm : Cesium.LinearApproximation
+        });
+    }
+}, {
+    text : 'Interpolation Path#1: Lagrange Polynomial Approximation',
+    onselect : function() {
+        entity1.position.setInterpolationOptions({
+            interpolationDegree : 5,
+            interpolationAlgorithm : Cesium.LagrangePolynomialApproximation
+        });
+    }
+}, {
+    text : 'Interpolation Path#1: Hermite Polynomial Approximation',
+    onselect : function() {
+        entity1.position.setInterpolationOptions({
+            interpolationDegree : 2,
+            interpolationAlgorithm : Cesium.HermitePolynomialApproximation
+        });
+    }
+}], 'extrapolationMenu');*/
+//Sandcastle_End
+    Sandcastle.finishedLoading();
+}
+if (typeof Cesium !== "undefined") {
+    startup(Cesium);
+} else if (typeof require === "function") {
+    require(["Cesium"], startup);
+}
+</script>
+</body>
+</html>

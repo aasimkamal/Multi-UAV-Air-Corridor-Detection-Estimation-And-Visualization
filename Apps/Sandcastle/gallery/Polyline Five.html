@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta name="description" content="Draw polylines with various widths and materials.">
+    <meta name="cesium-sandcastle-labels" content="Geometries">
+    <title>Cesium Demo</title>
+    <script type="text/javascript" src="../Sandcastle-header.js"></script>
+    <script type="text/javascript" src="../../../ThirdParty/requirejs-2.1.20/require.js"></script>
+    <script type="text/javascript">
+    require.config({
+        baseUrl : '../../../Source',
+        waitSeconds : 60
+    });
+    </script>
+</head>
+<body class="sandcastle-loading" data-sandcastle-bucket="bucket-requirejs.html">
+<style>
+    @import url(../templates/bucket.css);
+</style>
+<div id="cesiumContainer" class="fullSize"></div>
+<div id="loadingOverlay"><h1>Loading...</h1></div>
+<div id="toolbar"></div>
+<script id="cesium_sandcastle_script">
+function startup(Cesium) {
+    'use strict';
+//Sandcastle_Begin
+var viewer = new Cesium.Viewer('cesiumContainer');
+/*
+var redLine = viewer.entities.add({
+    name : 'Red line on the surface',
+    polyline : {
+        positions : Cesium.Cartesian3.fromDegreesArray([-75, 35,
+                                                        -125, 35]),
+        width : 5,
+        material : Cesium.Color.RED
+    }
+});
+
+var glowingLine = viewer.entities.add({
+    name : 'Glowing blue line on the surface',
+    polyline : {
+        positions : Cesium.Cartesian3.fromDegreesArray([-75, 37,
+                                                        -125, 37]),
+        width : 10,
+        material : new Cesium.PolylineGlowMaterialProperty({
+            glowPower : 0.2,
+            color : Cesium.Color.BLUE
+        })
+    }
+});
+*/
+var orangeOutlined = viewer.entities.add({
+    name : 'Orange line with black outline at height and following the surface',
+    polyline : {
+        positions : Cesium.Cartesian3.fromDegreesArrayHeights([
+-83.60599994659424,41.65314642955857,1000,
+-83.61149847507477,41.65748715975828,1100,
+-83.60820472240448,41.65790799062034,1050,
+-83.61224949359894,41.6606894130704,1000
+]),
+        width : 5,
+        material : new Cesium.PolylineOutlineMaterialProperty({
+            color : Cesium.Color.ORANGE,
+            outlineWidth : 2,
+            outlineColor : Cesium.Color.BLACK
+        })
+    }
+});
+
+var redPath = viewer.entities.add({
+    name : 'red path at height',
+    polyline : {
+        positions : Cesium.Cartesian3.fromDegreesArrayHeights([
+-83.61399829387665,41.65331477357836,536.35,
+-83.61404120922089,41.6566174339294,452.67,
+-83.60747516155243,41.65665350574102,605,
+-83.60684216022491,41.66014035216091,475,
+-83.61385881900787,41.66005618912598,500
+]),
+        width : 5,
+        material : Cesium.Color.RED
+    }
+});
+
+var bluePath = viewer.entities.add({
+    name : 'Blue path',
+    polyline : {
+        positions : Cesium.Cartesian3.fromDegreesArrayHeights([
+-83.62171769142151,41.66080162932243,200,
+-83.60479831695557,41.65329072445963,250,
+-83.59930515289305,41.660320701151136,200,
+-83.60895037651062,41.671132702102106,225,
+-83.61650347709656,41.67340868147116,175
+]),
+        width : 5,
+        color : Cesium.Color.BLUE
+        
+    }
+});
+
+var purplePath = viewer.entities.add({
+    name : 'Purple Path at height',
+    polyline : {
+        positions : Cesium.Cartesian3.fromDegreesArrayHeights([
+-83.61230850219727,41.65338692088074,400,
+-83.59621524810791,41.63879548894791,410,
+-83.58582973480225,41.64594730695605,325,
+-83.61664295196533,41.66178752084511,250
+]),
+        width : 5,
+        material : Cesium.Color.YELLOW
+    }
+});
+
+var cyanPath = viewer.entities.add({
+    name : 'Cyan Path at height',
+    polyline : {
+        positions : Cesium.Cartesian3.fromDegreesArrayHeights([
+-83.60986232757568,41.653258658953995,300,
+-83.6284875869751,41.67477102498508,330,
+-83.59806060791016,41.67467486050641,280,
+-83.58132362365723,41.65357931329197,300,
+-83.61020565032959,41.65438094215332,375
+]),
+        width : 5,
+        material : Cesium.Color.CYAN
+    }
+});
+
+viewer.zoomTo(viewer.entities);
+//Sandcastle_End
+Sandcastle.finishedLoading();
+}
+if (typeof Cesium !== "undefined") {
+    startup(Cesium);
+} else if (typeof require === "function") {
+    require(["Cesium"], startup);
+}
+</script>
+</body>
+</html>

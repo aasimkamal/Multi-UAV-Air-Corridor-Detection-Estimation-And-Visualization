@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>Cloud Convert</title>
+    
+</head>
+<body>
+<!-- A container for the Cesium Viewer to live in. -->
+<form action="https://api.cloudconvert.com/convert" method="POST" enctype="multipart/form-data">
+    <input type="file" name="file">
+    <input type="hidden" name="apikey" value="Zr_vHPK5B3Hd4MBM3UQBn4HENI06wiTT7vSRfPPKLeMYmRT8zo7IJHlJJtmHlKLNiiknBJlsy2s7HyB0tLxe7Q">
+    <input type="hidden" name="inputformat" value="txt">
+    <input type="hidden" name="outputformat" value="pdf">
+    <input type="hidden" name="input" value="upload">
+    <input type="hidden" name="wait" value="true">
+    <input type="hidden" name="download" value="true">
+    <input type="submit" value="Convert!">
+</form>
+</body>
+</html>
