@@ -12,11 +12,14 @@ Visit the [Downloads page](http://cesiumjs.org/downloads.html) or use the npm mo
 ```
 npm install cesium
 ```
+Make sure your system is Cesium compatible by visiting [Cesium Viewer](https://cesiumjs.org/Cesium/Build/Apps/CesiumViewer/). No globe? See [Troubleshooting](https://cesiumjs.org/troubleshooting/).
+
+Install [Node.js](https://nodejs.org/en/).
+
+Get the code. Either clone or download the zip and extract the contents.
+
+In your console, navigate to the root directory.
 ```
-- Make sure your system is Cesium compatible by visiting [Cesium Viewer](https://cesiumjs.org/Cesium/Build/Apps/CesiumViewer/). No globe? See [Troubleshooting](https://cesiumjs.org/troubleshooting/).
-- Install [Node.js](https://nodejs.org/en/).
-- Get the code. Either clone or download the zip and extract the contents.
-- In your console, navigate to the root directory.
-- Run npm install.
-- Run npm start.
+Run npm install.
+Run npm start.
 ```
