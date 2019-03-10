@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://github.com/aasimkamal/Multi-UAV-Air-Corridor-Estimation-And-Visualization/Apps/Sandcastle/gallery/Cesium Widget.jpg" width="50%" />
+<img src="https://github.com/aasimkamal/Multi-UAV-Air-Corridor-Estimation-And-Visualization/blob/master/Screenshots/UAVElevenCorridorsSideSN.PNG" width="50%" />
 </p>
 
 CesiumJS is a JavaScript library for creating 3D globes and 2D maps in a web browser without a plugin. It uses WebGL for hardware-accelerated graphics, and is cross-platform, cross-browser, and tuned for dynamic-data visualization.
